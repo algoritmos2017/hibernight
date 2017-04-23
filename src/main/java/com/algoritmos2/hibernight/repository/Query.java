@@ -1,5 +1,6 @@
 package com.algoritmos2.hibernight.repository;
 
+import java.util.Arrays;
 import java.util.List;
 
 public class Query {
@@ -13,6 +14,8 @@ public class Query {
     // Invoca a: _query para obtener el SQL que se debe ejecutar
     // Retorna: una lista de objetos de tipo T
     public static <T> List<T> query(Connection con, Class<T> dtoClass, String xql, Object... args){
+        String realQuery = String.format(xql, args).replace("clazz", dtoClass.getName());
+        con.list(realQuery);
         return null;
     }
 

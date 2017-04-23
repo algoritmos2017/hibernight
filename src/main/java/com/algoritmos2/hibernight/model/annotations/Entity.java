@@ -1,4 +1,4 @@
-package com.algoritmos2.hibernight.annotations;
+package com.algoritmos2.hibernight.model.annotations;
 
 import java.lang.annotation.*;
 
