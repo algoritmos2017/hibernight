@@ -1,0 +1,9 @@
+com\algoritmos2\hibernight\repository\CommonDao.class
+com\algoritmos2\hibernight\annotations\Table.class
+com\algoritmos2\hibernight\config\DataBaseConfig.class
+com\algoritmos2\hibernight\annotations\Column.class
+com\algoritmos2\hibernight\repository\Connection.class
+com\algoritmos2\hibernight\annotations\Entity.class
+com\algoritmos2\hibernight\repository\Repository.class
+com\algoritmos2\hibernight\repository\Query.class
+com\algoritmos2\hibernight\annotations\Id.class
