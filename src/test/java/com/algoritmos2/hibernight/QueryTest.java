@@ -1,8 +1,10 @@
 package com.algoritmos2.hibernight;
 
 import com.algoritmos2.hibernight.config.DataBaseConfig;
+import com.algoritmos2.hibernight.model.Direccion;
 import com.algoritmos2.hibernight.model.Person;
 import com.algoritmos2.hibernight.model.mapper.Mapper;
+import com.algoritmos2.hibernight.repository.Query;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -10,6 +12,12 @@ import org.junit.Test;
 import javax.naming.ConfigurationException;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class QueryTest extends DataBaseConfig {
 
@@ -27,25 +35,35 @@ public class QueryTest extends DataBaseConfig {
 
     @Test
     public void list() throws ConfigurationException, SQLException {
-        //System.out.println(Person.class.getAnnotations()[0].annotationType().getTypeName());
-
         Mapper mapper = new Mapper();
 
-        mapper.createTable(Person.class);
-
-        //String xql = "SELECT * FROM clazz where person_name = ?";
-        /*
         Statement stmt = connection.createStatement();
+        System.out.println(mapper.createTableQuery(Direccion.class));
+        //stmt.executeUpdate(mapper.createTableQuery(Direccion.class));
+    }
 
-        String sql = "CREATE TABLE Person " +
-                "(id INTEGER not NULL, " +
-                " person_name VARCHAR(255), " +
-                " last VARCHAR(255), " +
-                " age INTEGER, " +
-                " PRIMARY KEY ( id ))";
+    @Test
+    public void query() throws SQLException {
+        String xql = "$nombre=? and $direccion.calle=?";
 
-        stmt.executeUpdate(sql);
-        */
+        Query.query(connection, Person.class, xql, "pepito", "Av Rivadavia 233");
+    }
+
+    @Test
+    public void patternToGetFields() throws SQLException {
+        List<String> fields = new ArrayList<>();
+        Pattern pattern = Pattern.compile("\\$(.*?)=\\?");
+        String xql = "$nombre=? and $direccion.calle=? and $ocupacion=?";
+        Matcher matcher = pattern.matcher(xql);
+
+        Arrays.asList("pepi","av rivada","asdads");
+
+        while (matcher.find()) {
+            fields.add(matcher.group(1));
+        }
+
+        System.out.println(fields);
+        //Query.query(connection, Person.class, xql, Arrays.asList("jorg","dreccion", "trabajo"));
     }
 
 }

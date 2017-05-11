@@ -6,11 +6,16 @@ import com.algoritmos2.hibernight.model.annotations.*;
 public class Person {
 
     @Id(strategy = Id.ASSIGNED)
-    @Column(name = "person_name")
+    @Column(name = "id")
+    Integer id;
+
+    @Column(name = "name")
     String name;
 
     @Column(name = "cellphone")
     String cellphone;
+
+    Long numero;
 
     public Person() {
     }
@@ -29,5 +34,13 @@ public class Person {
 
     public void setCellphone(String cellphone) {
         this.cellphone = cellphone;
+    }
+
+    public Long getNumero() {
+        return numero;
+    }
+
+    public void setNumero(Long numero) {
+        this.numero = numero;
     }
 }
