@@ -111,17 +111,17 @@ public class Mapper {
         return fieldsByType;
     }
 
-    public static <T> String tableName(Class<T> clazz) {
-        return Optional.ofNullable(clazz.getAnnotation(Table.class))
+    public static <T> String tableName(Class<T> unaClase) {
+        /*return Optional.ofNullable(unaClase.getAnnotation(Table.class))
                 .orElseThrow(() -> new RuntimeException("Class must have Table name"))
-                .name();
-        /*
-        return Arrays.asList(clazz.getDeclaredAnnotations()).stream()
+                .name();*/
+        
+        return Arrays.asList(unaClase.getDeclaredAnnotations()).stream()
                 .filter(annotation -> annotation.annotationType().getSimpleName().equals(TABLE))
                 .findFirst()
                 .map(a -> ((Table) a).name())
                 .orElseThrow(() -> new RuntimeException("You need to write a Table name"));
-                         */
+                         
     }
 
     public <T> String createTableQuery(Class<T> clazz) {

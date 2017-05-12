@@ -14,7 +14,7 @@ import java.util.regex.Pattern;
 public class Query {
 
     // Retorna: el SQL correspondiente a la clase dtoClass acotado por xql
-    private static <T> String _query(Class<T> dtoClass, String xql) {
+    public static <T> String _query(Class<T> dtoClass, String xql) {
         QueryBuilder queryBuilder = new QueryBuilder();
         List<String> fields = new ArrayList();
         Pattern pattern = Pattern.compile("\\$(.*?)=\\?");
@@ -23,26 +23,36 @@ public class Query {
         while (matcher.find()) {
             fields.add(matcher.group(1));
         }
+        
+        System.out.println("fields: "+fields);
 
         queryBuilder.setTablaName(Mapper.tableName(dtoClass));
         Mapper.obtenerCampos(dtoClass, queryBuilder);
 
         String sql = "";
         sql += "SELECT ";
-
+        
         for (final String campo : queryBuilder.getColumns()) {
             sql += campo + ", ";
         }
-
+        
+        System.out.println("sql after queryBuilder: "+sql);
+        
         sql += "FROM " + queryBuilder.getTablaName() + " " + queryBuilder.getTablaName().charAt(0) + " ";
+        
+        System.out.println("sql + From: "+sql);
 
         for (final String join : queryBuilder.getJoins()) {
             sql += "\n";
             sql += join + " ";
         }
+        
+        System.out.println("sql + Joins: "+sql);
 
         sql += "\n";
         sql += "WHERE " + xql;
+        
+        System.out.println("sql + Where: "+sql);
 
         return sql;
     }
