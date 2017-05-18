@@ -14,18 +14,16 @@ import java.util.regex.Pattern;
 public class Query {
 
     // Retorna: el SQL correspondiente a la clase dtoClass acotado por xql
-    public static <T> String _query(Class<T> dtoClass, String xql) {
+    public static <T> String _query(Class<T> dtoClass, String xql,Object... args) {
         QueryBuilder queryBuilder = new QueryBuilder();
         List<String> fields = new ArrayList();
         Pattern pattern = Pattern.compile("\\$(.*?)=\\?");
         Matcher matcher = pattern.matcher(xql);
-
+        
         while (matcher.find()) {
             fields.add(matcher.group(1));
         }
         
-        System.out.println("fields: "+fields);
-
         queryBuilder.setTablaName(Mapper.tableName(dtoClass));
         Mapper.obtenerCampos(dtoClass, queryBuilder);
 
@@ -36,31 +34,29 @@ public class Query {
             sql += campo + ", ";
         }
         
-        System.out.println("sql after queryBuilder: "+sql);
-        
         sql += "FROM " + queryBuilder.getTablaName() + " " + queryBuilder.getTablaName().charAt(0) + " ";
         
-        System.out.println("sql + From: "+sql);
+        List<String> joins = queryBuilder.getJoins();
 
-        for (final String join : queryBuilder.getJoins()) {
+        for (final String join : joins) {
             sql += "\n";
             sql += join + " ";
         }
         
-        System.out.println("sql + Joins: "+sql);
-
-        sql += "\n";
-        sql += "WHERE " + xql;
+        Mapper.obternerWhere(dtoClass,xql,queryBuilder,args);
         
-        System.out.println("sql + Where: "+sql);
-
+        sql += "\n";
+        sql += "WHERE " +  queryBuilder.getWhere();
+        
+        System.out.println("SQL FInal:\n" + sql);
+        
         return sql;
     }
 
     // Invoca a: _query para obtener el SQL que se debe ejecutar
     // Retorna: una lista de objetos de tipo T
     public static <T> List<T> query(Connection con, Class<T> dtoClass, String xql, Object... args) throws SQLException {
-        String realQuery = _query(dtoClass, xql);
+        String realQuery = _query(dtoClass, xql,args);
         Statement stmt = null;
 
         try {

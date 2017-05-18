@@ -2,7 +2,7 @@ package com.algoritmos2.hibernight;
 
 import com.algoritmos2.hibernight.config.DataBaseConfig;
 import com.algoritmos2.hibernight.model.Direccion;
-import com.algoritmos2.hibernight.model.Person;
+import com.algoritmos2.hibernight.model.Persona;
 import com.algoritmos2.hibernight.model.mapper.Mapper;
 import com.algoritmos2.hibernight.repository.Query;
 import org.junit.After;
@@ -46,7 +46,7 @@ public class QueryTest extends DataBaseConfig {
     public void query() throws SQLException {
         String xql = "$nombre=? and $direccion.calle=?";
 
-        Query.query(connection, Person.class, xql, "pepito", "Av Rivadavia 233");
+        Query.query(connection, Persona.class, xql, "pepito", "Av Rivadavia 233");
     }
 
     @Test
