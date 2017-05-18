@@ -21,7 +21,7 @@ public class Mapper {
     private static final String WHERE = "WHERE";
     private static final String SELECT = "SELECT";
     private static Map<Class, String> types;
-    private static int recorrido = 0;//Para el autómata
+    private static Map <String, String> traduccion;
     public Mapper() {
         this.types = new HashMap() {{
             put(String.class, "VARCHAR(255)");
@@ -148,105 +148,97 @@ public class Mapper {
     
     public static <T> void obternerWhere(Class<T> clase, String xql,QueryBuilder queryBuilder, Object... args){
     	List <Class<?>> clasesATraducir = obtenerClasesDeRelaciones(clase);
-    	Map <String, String> traduccion = traducirListaDeClases(clasesATraducir);
-    	String where = "";
-    	Token token;
-    	int argumentoN = 0;
+    	traduccion = traducirListaDeClases(clasesATraducir);
+    	String where = "", aux = "";
+    	char car;
+    	int argumentoN = -1, i = 0;
     	
-    	while(recorrido <= xql.length()){
-    		token = miniAutomata(xql);
+    	xql += ' ';//Se le añade al final para que lo use como sentinela
+    	
+    	while(i < xql.length()){
+    		car = xql.charAt(i);
+    		i++;
     		
-    		switch(token.getEstado()){
-    			case 5: throw new Error("Formato incorrecto en el XQL");
-    			case 2:
-    				where += traduccion.get(token.getValor());
-    				break;
-    			case 3:
-    				where += token.getValor();
-    				break;
-    			case 4:
-    				//where += args[argumentoN];
-    				argumentoN++;
-    				break;
-    			case 6:
-    				where += token.getValor();
-    				break;
+    		if(Character.isLetterOrDigit(car)){
+    			aux += car;
     		}
-    	}
+    		
+    		switch(car){
+    		case ' ':
+    			if(!aux.isEmpty()){
+    				where += analizarAux(aux);
+    				aux="";
+    			}
+    			where += ' ';
+    			break;
+    		case '?':
+    			argumentoN++;
+    			try{
+    				where += analizarArgumento(args[argumentoN].toString());
+    			}
+    			catch(ArrayIndexOutOfBoundsException e){
+    				throw new Error("Faltan argumentos en el xql");
+    			}
+    			break;
+    		case '$':
+    			break;
+    		case '.':
+    			where += analizarAux(aux);
+				aux="";
+    			where+='.';
+    			break;
+    		case '=':
+    			where += analizarAux(aux);
+				aux="";
+    			where+='=';
+    			break;
+    		}
+    		}
+    	
+    	if((argumentoN+1) < args.length)
+    		throw new Error("Demasiados argumentos en el xql");
     	
     	queryBuilder.setWhere(where);
+    	}
+    
+    private static String analizarAux(String aux){
+    	switch(aux){
+		case "or":
+			return "OR";
+		case "and":
+			return "AND";
+		default://Serían números, campos o cadenas
+			if(traduccion.containsKey(aux))//Si es un campo retornarlo traducido
+				return traduccion.get(aux);
+			return analizarArgumento(aux);//No es un campo, pero es una cadena de letras o una constante
+		}
     }
     
-    private static Token miniAutomata(String xql){
-    	Token token = new Token();
-    	int estado = 0;
-    	char caracter;
-    	String aux = "";
-    	final int[][] TT = {{1,3,0,4}, {5,2,5,5}};
-    	
-    	caracter = avanzar(xql);
-		
-		if(Character.isLetterOrDigit(caracter))
-			aux += caracter;
-		
-		estado = TT [estado][columna(caracter)];
-    	
-    	while(!(estado == 3 || estado == 2 || estado == 4) && (caracter = avanzar(xql)) != '\0'){
-    		
-    		if(Character.isLetterOrDigit(caracter))
-    			aux += caracter;
-    		
-    		estado = TT [estado][columna(caracter)];
-    		
-    	}
-    	
-    	if(estado == 3){
-    		aux = "";
-    		aux += xql.charAt(recorrido);
-    		token.setValor(aux);
-    		token.setEstado(3);
-    	}
-    	
-    	if(estado == 4){
-    		aux = "";
-    		aux += "?";
-    		token.setValor(aux);
-    		token.setEstado(4);
-    	}
-    	
-    	if(estado == 2){
-    		recorrido--;
-    		
-    		if(aux.equals("and")){
-    			token.setValor("AND");
-    			token.setEstado(6);
-    		}
-    		if(aux.equals("or")){
-    			token.setValor("OR");
-    			token.setEstado(6);
-    		}
-    		else{
-    			token.setValor(aux);
-        		token.setEstado(2);
-    		}
-    	}
-    	return token;
+    private static String analizarArgumento(String argumento){
+    	if(esCadenaAlfnum(argumento))//Si es alfanumérica le pone las comillas
+    		return "\""+ argumento + "\"";
+    	return argumento;//Si no, la retorna como una constante
     }
     
-    private static char avanzar(String xql){
-    	char caracter = '\0';
-    	
-    	if(xql.length() > recorrido){
-    		caracter = xql.charAt(recorrido);
-        	recorrido++;
+    private static boolean esCadenaAlfnum(String cadena){
+    	boolean esCadenaDeNumeros = true;
+    	for(int i = 0; i < cadena.length(); ++i){
+    		if(!Character.isDigit(cadena.charAt(i))){
+    			esCadenaDeNumeros=false;
+    			break;
+    		}
     	}
-    	return caracter;
-    }
-    
-    private static int columna(char caracter){
-    	if(caracter == ' ' || caracter == '$') return 3;
-    	if(Character.isLetterOrDigit(caracter)) return 1;
-    	return 2;
+    	if(esCadenaDeNumeros)
+    		return false;
+    	
+    	for(int i = 0; i < cadena.length(); ++i) {
+            char caracter = cadena.charAt(i);
+     
+            if(!Character.isLetterOrDigit(caracter)) {
+                throw new Error("XQL contiene caracteres incorrectos");
+            }
+        }
+        return true;
     }
     
  /* Método muy últil recibe una clase A y devuelve un set ordenado con todas las

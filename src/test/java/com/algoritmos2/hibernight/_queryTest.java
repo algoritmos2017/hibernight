@@ -7,6 +7,7 @@ import com.algoritmos2.hibernight.model.annotations.Table;
 import com.algoritmos2.hibernight.model.mapper.Mapper;
 
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -17,12 +18,47 @@ import java.util.Optional;
 import java.util.Set;
 
 public class _queryTest {
-	String xql = "$nombre=? and $direccion.calle=?";
+	String xql = "";
+	String sqlEsperado = "SELECT persona.id_persona, persona.nombre, persona.id_direccion, direccion.id_direccion, direccion.calle, "
+			+ "direccion.numero, persona.id_ocupacion, ocupacion.id_ocupacion, ocupacion.descripcion, ocupacion.id_tipoocupacion, "
+			+ "tipo_ocupacion.id_tipoocupacion, tipo_ocupacion.descripcion, FROM persona p \n"
+			+ "INNER JOIN direccion direccion ON persona.id_direccion=direccion.id_direccion \n"
+			+ "INNER JOIN ocupacion ocupacion ON persona.id_ocupacion=ocupacion.id_ocupacion \n"
+			+ "INNER JOIN tipo_ocupacion tipo_ocupacion ON ocupacion.id_tipoocupacion=tipo_ocupacion.id_tipoocupacion \n"
+			+ "WHERE nombre=\"Juan\" AND id_direccion.calle=2 ";
 	
 	@Test
-	public void _queryIntegral(){
-		//assertTrue(true);
-		Query._query(Persona.class, xql, "Juan", 2);
+	public void _queryConArgumentos(){
+		xql = "$nombre=? and $direccion.calle=?";
+		String sqlDeLaFuncion = Query._query(Persona.class, xql, "Juan", 2);
 		
+		//System.out.println(sqlDeLaFuncion);
+		Assert.assertTrue(sqlDeLaFuncion.equals(sqlEsperado));
+	}
+	@Test
+	public void _querySinArgumentos(){
+		xql = "$nombre=Juan and $direccion.calle=2";
+		String sqlDeLaFuncion = Query._query(Persona.class, xql);
+		
+		//System.out.println(sqlDeLaFuncion);
+		Assert.assertTrue(sqlDeLaFuncion.equals(sqlEsperado));
+	}
+	@Test
+	public void xqlConCaracteresInvalidosSeIgnoran(){
+		xql = "$no(mbre=Jua)n an&d $direccion.call%e=2";
+		String sqlDeLaFuncion = Query._query(Persona.class, xql);
+		
+		//System.out.println(sqlDeLaFuncion);
+		Assert.assertTrue(sqlDeLaFuncion.equals(sqlEsperado));
+	}
+	@Test(expected = Error.class)
+	public void _queryCantidadMenorDeArgumentosDaError(){
+		xql = "$nombre=? and $direccion.calle=2";
+		Query._query(Persona.class, xql);
+	}
+	@Test(expected = Error.class)
+	public void _queryCantidadMayorDeArgumentosDaError(){
+		xql = "$no(mbre=Jua)n an&d $direccion.call%e=2";
+		Query._query(Persona.class, xql, "Juan", 2,3,5,6,7,2,"afs");
 	}
 }

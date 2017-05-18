@@ -48,8 +48,6 @@ public class Query {
         sql += "\n";
         sql += "WHERE " +  queryBuilder.getWhere();
         
-        System.out.println("SQL FInal:\n" + sql);
-        
         return sql;
     }
 
