@@ -1,0 +1,17 @@
+com/algoritmos2/hibernight/model/mapper/Mapper$1.class
+com/algoritmos2/hibernight/model/Ocupacion.class
+com/algoritmos2/hibernight/model/Emp.class
+com/algoritmos2/hibernight/model/QueryBuilder.class
+com/algoritmos2/hibernight/model/annotations/Relation.class
+com/algoritmos2/hibernight/model/TipoOcupacion.class
+com/algoritmos2/hibernight/model/Direccion.class
+com/algoritmos2/hibernight/model/Persona.class
+com/algoritmos2/hibernight/model/annotations/Gui.class
+com/algoritmos2/hibernight/config/DataBaseConfig.class
+com/algoritmos2/hibernight/model/Person.class
+com/algoritmos2/hibernight/model/Dept.class
+com/algoritmos2/hibernight/model/annotations/Column.class
+com/algoritmos2/hibernight/model/annotations/Id.class
+com/algoritmos2/hibernight/model/annotations/Table.class
+com/algoritmos2/hibernight/model/mapper/Mapper.class
+com/algoritmos2/hibernight/repository/Query.class

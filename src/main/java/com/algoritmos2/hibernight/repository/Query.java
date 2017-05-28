@@ -1,12 +1,19 @@
 package com.algoritmos2.hibernight.repository;
 
 import com.algoritmos2.hibernight.model.QueryBuilder;
+import com.algoritmos2.hibernight.model.annotations.Column;
 import com.algoritmos2.hibernight.model.mapper.Mapper;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -14,47 +21,49 @@ import java.util.regex.Pattern;
 public class Query {
 
     // Retorna: el SQL correspondiente a la clase dtoClass acotado por xql
-    public static <T> String _query(Class<T> dtoClass, String xql,Object... args) {
+    public static <T> String _query(Class<T> dtoClass, String xql, Object... args) {
         QueryBuilder queryBuilder = new QueryBuilder();
         List<String> fields = new ArrayList();
         Pattern pattern = Pattern.compile("\\$(.*?)=\\?");
         Matcher matcher = pattern.matcher(xql);
-        
+
         while (matcher.find()) {
             fields.add(matcher.group(1));
         }
-        
+
         queryBuilder.setTablaName(Mapper.tableName(dtoClass));
         Mapper.obtenerCampos(dtoClass, queryBuilder);
 
         String sql = "";
         sql += "SELECT ";
-        
+
         for (final String campo : queryBuilder.getColumns()) {
             sql += campo + ", ";
         }
-        
+
         sql += "FROM " + queryBuilder.getTablaName() + " " + queryBuilder.getTablaName().charAt(0) + " ";
-        
+
         List<String> joins = queryBuilder.getJoins();
 
         for (final String join : joins) {
             sql += "\n";
             sql += join + " ";
         }
-        
-        Mapper.obternerWhere(dtoClass,xql,queryBuilder,args);
-        
+
+        Mapper.obternerWhere(dtoClass, xql, queryBuilder, args);
+
         sql += "\n";
-        sql += "WHERE " +  queryBuilder.getWhere();
-        
+        sql += "WHERE " + queryBuilder.getWhere();
+
         return sql;
     }
 
     // Invoca a: _query para obtener el SQL que se debe ejecutar
     // Retorna: una lista de objetos de tipo T
-    public static <T> List<T> query(Connection con, Class<T> dtoClass, String xql, Object... args) throws SQLException {
-        String realQuery = _query(dtoClass, xql,args);
+    public static <T> List<T> query(Connection con, Class<T> dtoClass, String xql, Object... args) throws SQLException, IllegalAccessException, InvocationTargetException, InstantiationException, NoSuchMethodException, ClassNotFoundException {
+        //String realQuery = _query(dtoClass, xql,args);
+        String realQuery = "Select * from direccion";
+        List<Object> result = new ArrayList();
         Statement stmt = null;
 
         try {
@@ -63,7 +72,41 @@ public class Query {
             e.printStackTrace();
         }
 
-        return null;
+        ResultSet rs = stmt.executeQuery(realQuery);
+
+        while (rs.next()) {
+
+            Class<?> clazz = Class.forName(dtoClass.getName());
+            Constructor<?> ctor = clazz.getConstructor();
+            Object object = ctor.newInstance();
+
+            Arrays.stream(dtoClass.getDeclaredFields())
+                    .forEach(field -> {
+                        try {
+                            if(null != field.getAnnotation(Column.class)){
+                                String dataBaseValue = rs.getString(field.getAnnotation(Column.class).name());
+                                Field declaredField = object.getClass().getDeclaredField(field.getName());
+
+                                declaredField.setAccessible(Boolean.TRUE);
+                                System.out.println(field.getName());
+                                System.out.println(dataBaseValue);
+                                System.out.println(declaredField);
+
+                                declaredField.set(object, Mapper.cast(field,dataBaseValue));
+                            }
+                        } catch (SQLException e) {
+                            e.printStackTrace();
+                        } catch (NoSuchFieldException e) {
+                            e.printStackTrace();
+                        } catch (IllegalAccessException e) {
+                            e.printStackTrace();
+                        }
+                    });
+
+            result.add(object);
+        }
+
+        return (List<T>) result;
     }
 
     // Retorna: una fila identificada por id o null si no existe

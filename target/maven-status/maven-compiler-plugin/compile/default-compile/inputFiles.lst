@@ -7,12 +7,10 @@
 /home/diego/desarrollos/hibernight/src/main/java/com/algoritmos2/hibernight/repository/Query.java
 /home/diego/desarrollos/hibernight/src/main/java/com/algoritmos2/hibernight/model/TipoOcupacion.java
 /home/diego/desarrollos/hibernight/src/main/java/com/algoritmos2/hibernight/model/Person.java
-/home/diego/desarrollos/hibernight/src/main/java/com/algoritmos2/hibernight/Hibernight.java
 /home/diego/desarrollos/hibernight/src/main/java/com/algoritmos2/hibernight/model/annotations/Gui.java
 /home/diego/desarrollos/hibernight/src/main/java/com/algoritmos2/hibernight/model/Ocupacion.java
 /home/diego/desarrollos/hibernight/src/main/java/com/algoritmos2/hibernight/model/QueryBuilder.java
 /home/diego/desarrollos/hibernight/src/main/java/com/algoritmos2/hibernight/model/Dept.java
 /home/diego/desarrollos/hibernight/src/main/java/com/algoritmos2/hibernight/model/Direccion.java
-/home/diego/desarrollos/hibernight/src/main/java/com/algoritmos2/hibernight/Token.java
 /home/diego/desarrollos/hibernight/src/main/java/com/algoritmos2/hibernight/config/DataBaseConfig.java
 /home/diego/desarrollos/hibernight/src/main/java/com/algoritmos2/hibernight/model/annotations/Table.java

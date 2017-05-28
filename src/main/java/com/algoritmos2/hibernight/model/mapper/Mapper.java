@@ -9,8 +9,6 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.util.*;
 
-import org.mockito.internal.creation.jmock.ClassImposterizer.ClassWithSuperclassToWorkAroundCglibBug;
-
 public class Mapper {
 
     private static final String PRIMARY_KEY = "primary_key";
@@ -91,6 +89,19 @@ public class Mapper {
         }
     }
 
+    public static Object cast(Field field, String value){
+        Object response = null;
+        if(field.getType().equals(String.class)){
+            response = value;
+        }
+
+        if(field.getType().equals(Integer.class)){
+            response = Integer.valueOf(value);
+        }
+
+        return response;
+    }
+
     public static <T> Map<String, String> fieldsFor(Class<T> clazz) {
         Map<String, String> fieldsByType = new HashMap<>();
 
@@ -99,7 +110,7 @@ public class Mapper {
                     List<Annotation> annotations = Arrays.asList(field.getAnnotations());
 
                     if (annotations.stream().anyMatch(a -> a.annotationType().getSimpleName().equals(ID))) {
-                        fieldsByType.put(PRIMARY_KEY, field.getName());
+                        fieldsByType.put(PRIMARY_KEY, field.getAnnotation(Column.class).name());
                     }
 
                     annotations.stream().forEach(a -> {
@@ -153,7 +164,7 @@ public class Mapper {
     	char car;
     	int argumentoN = -1, i = 0;
     	
-    	xql += ' ';//Se le añade al final para que lo use como sentinela
+    	xql += ' ';//Se le aï¿½ade al final para que lo use como sentinela
     	
     	while(i < xql.length()){
     		car = xql.charAt(i);
@@ -207,7 +218,7 @@ public class Mapper {
 			return "OR";
 		case "and":
 			return "AND";
-		default://Serían números, campos o cadenas
+		default://Serï¿½an nï¿½meros, campos o cadenas
 			if(traduccion.containsKey(aux))//Si es un campo retornarlo traducido
 				return traduccion.get(aux);
 			return analizarArgumento(aux);//No es un campo, pero es una cadena de letras o una constante
@@ -215,7 +226,7 @@ public class Mapper {
     }
     
     private static String analizarArgumento(String argumento){
-    	if(esCadenaAlfnum(argumento))//Si es alfanumérica le pone las comillas
+    	if(esCadenaAlfnum(argumento))//Si es alfanumï¿½rica le pone las comillas
     		return "\""+ argumento + "\"";
     	return argumento;//Si no, la retorna como una constante
     }
@@ -241,17 +252,17 @@ public class Mapper {
         return true;
     }
     
- /* Método muy últil recibe una clase A y devuelve un set ordenado con todas las
+ /* Mï¿½todo muy ï¿½ltil recibe una clase A y devuelve un set ordenado con todas las
     clases con las que se relaciona esa clase A, incluyendo la misma clase A
-    Ej: métododo(Persona.class) devuelde Persona, Dirección, Ocupación, etc */
+    Ej: mï¿½tododo(Persona.class) devuelde Persona, Direcciï¿½n, Ocupaciï¿½n, etc */
     public static <T> List<Class<?>> obtenerClasesDeRelaciones(Class<T> claseAEvaluar){
     	List <Class<?>> clasesEvaluadas = new ArrayList<>();
     	List <Class<?>> clasesAEvaluar = new ArrayList<>();
     	
-    	//Vamos a evaluar la clase actual así que la añadimos en el set sin repeticion
+    	//Vamos a evaluar la clase actual asï¿½ que la aï¿½adimos en el set sin repeticion
     	clasesAEvaluar.add(claseAEvaluar);
     	
-    	//Ahora llamamos al método que nos trae el set de clases y lo retornamos
+    	//Ahora llamamos al mï¿½todo que nos trae el set de clases y lo retornamos
     	clasesEvaluadas = obtenerClasesDeRelacionesRecursivo(claseAEvaluar, clasesEvaluadas, clasesAEvaluar);
     	return clasesEvaluadas;
     }
@@ -275,12 +286,12 @@ public class Mapper {
     	}
     	
     /*  Ya obtuvimos todas las relaciones a otras tablas de esta clase
-    	así que las y la sacamos de las que se van a evaluar y de las evaluadas */
+    	asï¿½ que las y la sacamos de las que se van a evaluar y de las evaluadas */
     	clasesAEvaluar.remove(claseActual);
     	clasesEvaluadas.add(claseActual);
     	
-    	//Llamada recursiva a este método si clasesAEvaluar aún contiene elementos
-    	if(!clasesAEvaluar.isEmpty()){//Si no está vacío
+    	//Llamada recursiva a este mï¿½todo si clasesAEvaluar aï¿½n contiene elementos
+    	if(!clasesAEvaluar.isEmpty()){//Si no estï¿½ vacï¿½o
     		claseActual = clasesAEvaluar.get(0);//Obtenemos un elemento de las que son a evaluar
         	obtenerClasesDeRelacionesRecursivo(claseActual, clasesEvaluadas, clasesAEvaluar);
     	}
@@ -290,8 +301,8 @@ public class Mapper {
     
     /*Se le pasa una clase y devuelve un HashMap con los nombres de los atributos 
       en objetos y el nombre de los atributos de las tablas en paralelo.
-      También se añdade el nombre de la clase y el nombre de la tabla
-      Ej: Método(Persona) devuelve [<idPersona, id_persona>, 
+      Tambiï¿½n se aï¿½dade el nombre de la clase y el nombre de la tabla
+      Ej: Mï¿½todo(Persona) devuelve [<idPersona, id_persona>, 
       <direccion, id_direccion>, <Persona, person>, etc]  */
     private static <T> Map<String, String> traducirDeObjetosARelacional(Class<T> clase){
     	Field [] variables = clase.getDeclaredFields();

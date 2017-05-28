@@ -18,7 +18,7 @@ public class Direccion
 	private String calle;
 
 	@Column(name="numero")
-	private int numero;
+	private Integer numero;
 	
 	@Relation(type=Persona.class,att="direccion")
 	private Collection<Persona> personas;

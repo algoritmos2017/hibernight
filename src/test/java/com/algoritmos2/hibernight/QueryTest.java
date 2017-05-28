@@ -10,6 +10,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import javax.naming.ConfigurationException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -18,6 +20,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static org.junit.Assert.assertEquals;
 
 public class QueryTest extends DataBaseConfig {
 
@@ -42,12 +46,14 @@ public class QueryTest extends DataBaseConfig {
         //stmt.executeUpdate(mapper.createTableQuery(Direccion.class));
     }
 
+    /*
     @Test
     public void query() throws SQLException {
         String xql = "$nombre=? and $direccion.calle=?";
 
-        Query.query(connection, Persona.class, xql, "pepito", "Av Rivadavia 233");
+        //Query.query(connection, Persona.class, xql, "pepito", "Av Rivadavia 233");
     }
+    */
 
     @Test
     public void patternToGetFields() throws SQLException {
@@ -64,6 +70,15 @@ public class QueryTest extends DataBaseConfig {
 
         System.out.println(fields);
         //Query.query(connection, Person.class, xql, Arrays.asList("jorg","dreccion", "trabajo"));
+    }
+
+    @Test
+    public void query() throws SQLException, InvocationTargetException, NoSuchMethodException, ClassNotFoundException, InstantiationException, IllegalAccessException {
+       List<Direccion> direcciones =  Query.query(connection, Direccion.class, "$direccion.numero=?", Arrays.asList("111"));
+
+       assertEquals(1, direcciones.size());
+       assertEquals("Av Rivadavia 1880", direcciones.get(0).getCalle());
+
     }
 
 }
