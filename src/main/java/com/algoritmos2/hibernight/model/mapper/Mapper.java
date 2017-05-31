@@ -1,9 +1,11 @@
 package com.algoritmos2.hibernight.model.mapper;
 
+import com.algoritmos2.hibernight.model.Persona;
 import com.algoritmos2.hibernight.model.QueryBuilder;
 import com.algoritmos2.hibernight.model.annotations.Column;
 import com.algoritmos2.hibernight.model.annotations.Id;
 import com.algoritmos2.hibernight.model.annotations.Table;
+import com.algoritmos2.hibernight.repository.Query;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
@@ -161,7 +163,15 @@ public class Mapper {
                 case '$':
                     break;
                 case '.':
-                    where += analizarAux(aux);
+				try {
+					where += analizarNombreDeTabla(aux,clase);
+				} catch (NoSuchFieldException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (SecurityException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
                     aux = "";
                     where += '.';
                     break;
@@ -217,6 +227,13 @@ public class Mapper {
             }
         }
         return true;
+    }
+    
+    private static <T> String analizarNombreDeTabla(String fieldName, Class<T> clase) throws NoSuchFieldException, SecurityException{
+    	
+    	Field atributoBuscado = clase.getDeclaredField(fieldName);
+    	
+    	return tableName(atributoBuscado.getType());
     }
 
     public static <T> Object getObjectFrom(Class<T> dtoClass, ResultSet rs) throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
@@ -326,7 +343,7 @@ public class Mapper {
       Tambi�n se a�dade el nombre de la clase y el nombre de la tabla
       Ej: M�todo(Persona) devuelve [<idPersona, id_persona>,
       <direccion, id_direccion>, <Persona, person>, etc]  */
-    private static <T> Map<String, String> traducirDeObjetosARelacional(Class<T> clase) {
+    public static <T> Map<String, String> traducirDeObjetosARelacional(Class<T> clase) {
         Field[] variables = clase.getDeclaredFields();
         Map<String, String> nombreDelProgramadorYDeLaTabla = new HashMap<>();
 
@@ -346,7 +363,7 @@ public class Mapper {
     }
 
     //Lo mismo que arriba pero para una lista de clases
-    public static Map<String, String> traducirListaDeClases(List<Class<?>> clases) {
+    private static Map<String, String> traducirListaDeClases(List<Class<?>> clases) {
         Map<String, String> traduccion = new HashMap<>();
 
         for (Class<?> clase : clases)
@@ -378,5 +395,8 @@ public class Mapper {
                 .replace("?statement", builder.toString());
 
         return transformedQuery;
+    }
+    private static void main(String args[]){
+    	System.out.println(traducirDeObjetosARelacional(Persona.class));
     }
 }
