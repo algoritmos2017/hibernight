@@ -23,7 +23,7 @@ public class Query {
     // Retorna: el SQL correspondiente a la clase dtoClass acotado por xql
     public static <T> String _query(Class<T> dtoClass, String xql, Object... args) {
         QueryBuilder queryBuilder = new QueryBuilder();
-        List<String> fields = new ArrayList();
+        List<String> fields = new ArrayList<>();
         Pattern pattern = Pattern.compile("\\$(.*?)=\\?");
         Matcher matcher = pattern.matcher(xql);
 
@@ -40,20 +40,20 @@ public class Query {
         for (final String campo : queryBuilder.getColumns()) {
             sql += campo + ", ";
         }
+        //Sacar esta villereada
+        sql = sql.substring(0, sql.length()-2) + " ";
 
-        sql += "FROM " + queryBuilder.getTablaName() + " " + queryBuilder.getTablaName() + " ";
+        sql += " FROM " + queryBuilder.getTablaName();
 
         List<String> joins = queryBuilder.getJoins();
 
         for (final String join : joins) {
-            sql += "\n";
             sql += join + " ";
         }
 
         Mapper.obternerWhere(dtoClass, xql, queryBuilder, args);
-
-        sql += "\n";
-        sql += "WHERE " + queryBuilder.getWhere();
+        
+        sql += " WHERE " + queryBuilder.getWhere();
 
         return sql;
     }

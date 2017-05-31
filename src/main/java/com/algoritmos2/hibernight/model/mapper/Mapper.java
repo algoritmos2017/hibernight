@@ -85,7 +85,7 @@ public class Mapper {
                 if (nombreDeTabla != "") {
                     String nombreAtributo1 = obtenerFk(dtoClass, variable.getType());
                     String nombreAtributo2 = obtenerID(variable.getType());
-                    atributosAux = "INNER JOIN " + nombreDeTabla + " " + nombreDeTabla;
+                    atributosAux = " INNER JOIN " + nombreDeTabla;
                     atributosAux += " ON " + nombreDeTabla1 + "." + nombreAtributo1 + "=" + nombreDeTabla + "." + nombreAtributo2;
                     queryObjet.addJoin(atributosAux);
                     obtenerCampos(variable.getType(), queryObjet);
