@@ -41,7 +41,7 @@ public class Query {
             sql += campo + ", ";
         }
 
-        sql += "FROM " + queryBuilder.getTablaName() + " " + queryBuilder.getTablaName().charAt(0) + " ";
+        sql += "FROM " + queryBuilder.getTablaName() + " " + queryBuilder.getTablaName() + " ";
 
         List<String> joins = queryBuilder.getJoins();
 
