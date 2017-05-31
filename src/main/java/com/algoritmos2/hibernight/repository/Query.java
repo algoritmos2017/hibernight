@@ -2,6 +2,7 @@ package com.algoritmos2.hibernight.repository;
 
 import com.algoritmos2.hibernight.model.QueryBuilder;
 import com.algoritmos2.hibernight.model.annotations.Column;
+import com.algoritmos2.hibernight.model.annotations.Table;
 import com.algoritmos2.hibernight.model.mapper.Mapper;
 
 import java.lang.reflect.Constructor;
@@ -13,7 +14,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -61,8 +61,8 @@ public class Query {
     // Invoca a: _query para obtener el SQL que se debe ejecutar
     // Retorna: una lista de objetos de tipo T
     public static <T> List<T> query(Connection con, Class<T> dtoClass, String xql, Object... args) throws SQLException, IllegalAccessException, InvocationTargetException, InstantiationException, NoSuchMethodException, ClassNotFoundException {
-        //String realQuery = _query(dtoClass, xql,args);
-        String realQuery = "Select * from direccion";
+        //String realQuery = "Select * from Persona inner join direccion on Persona.id_direccion=direccion.id_direccion inner join ocupacion on Persona.id_ocupacion=ocupacion.id_ocupacion inner join tipo_ocupacion on ocupacion.id_tipo_ocupacion=tipo_ocupacion.id_tipoocupacion";
+        String realQuery = _query(dtoClass, xql,args);
         List<Object> result = new ArrayList();
         Statement stmt = null;
 
@@ -74,36 +74,13 @@ public class Query {
 
         ResultSet rs = stmt.executeQuery(realQuery);
 
+        Class<?> clazz = Class.forName(dtoClass.getName());
+        Constructor<?> constructor = clazz.getConstructor();
+        Object objectInstance = constructor.newInstance();
+
         while (rs.next()) {
 
-            Class<?> clazz = Class.forName(dtoClass.getName());
-            Constructor<?> ctor = clazz.getConstructor();
-            Object object = ctor.newInstance();
-
-            Arrays.stream(dtoClass.getDeclaredFields())
-                    .forEach(field -> {
-                        try {
-                            if(null != field.getAnnotation(Column.class)){
-                                String dataBaseValue = rs.getString(field.getAnnotation(Column.class).name());
-                                Field declaredField = object.getClass().getDeclaredField(field.getName());
-
-                                declaredField.setAccessible(Boolean.TRUE);
-                                System.out.println(field.getName());
-                                System.out.println(dataBaseValue);
-                                System.out.println(declaredField);
-
-                                declaredField.set(object, Mapper.cast(field,dataBaseValue));
-                            }
-                        } catch (SQLException e) {
-                            e.printStackTrace();
-                        } catch (NoSuchFieldException e) {
-                            e.printStackTrace();
-                        } catch (IllegalAccessException e) {
-                            e.printStackTrace();
-                        }
-                    });
-
-            result.add(object);
+            result.add(Mapper.getObjectFrom(dtoClass,rs));
         }
 
         return (List<T>) result;

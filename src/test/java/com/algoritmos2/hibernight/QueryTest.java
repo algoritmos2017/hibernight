@@ -11,6 +11,7 @@ import org.junit.Test;
 
 import javax.naming.ConfigurationException;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -20,8 +21,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import static org.junit.Assert.assertEquals;
 
 public class QueryTest extends DataBaseConfig {
 
@@ -62,7 +61,7 @@ public class QueryTest extends DataBaseConfig {
         String xql = "$nombre=? and $direccion.calle=? and $ocupacion=?";
         Matcher matcher = pattern.matcher(xql);
 
-        Arrays.asList("pepi","av rivada","asdads");
+        Arrays.asList("pepi", "av rivada", "asdads");
 
         while (matcher.find()) {
             fields.add(matcher.group(1));
@@ -74,11 +73,8 @@ public class QueryTest extends DataBaseConfig {
 
     @Test
     public void query() throws SQLException, InvocationTargetException, NoSuchMethodException, ClassNotFoundException, InstantiationException, IllegalAccessException {
-       List<Direccion> direcciones =  Query.query(connection, Direccion.class, "$direccion.numero=?", Arrays.asList("111"));
-
-       assertEquals(1, direcciones.size());
-       assertEquals("Av Rivadavia 1880", direcciones.get(0).getCalle());
+        String xql = "$nombre=? and $direccion.numero=?";
+        //List<Persona> personas = Query.query(connection,Persona.class, xql, "Diego", 111);
 
     }
-
 }

@@ -8,5 +8,10 @@ import java.lang.annotation.Target;
 @Target({ElementType.METHOD, ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Column {
+    int LAZY = 1;
+    int EAGER = 2;
+
     String name();
+
+    int fetchType() default 1;
 }

@@ -53,7 +53,7 @@ public class Direccion
 		this.calle=calle;
 	}
 
-	public int getNumero()
+	public Integer getNumero()
 	{
 		return numero;
 	}
