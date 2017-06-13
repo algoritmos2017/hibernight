@@ -4,6 +4,7 @@ import com.algoritmos2.hibernight.model.annotations.Column;
 import com.algoritmos2.hibernight.model.annotations.Id;
 import com.algoritmos2.hibernight.model.annotations.Relation;
 import com.algoritmos2.hibernight.model.annotations.Table;
+import com.algoritmos2.hibernight.model.aspect.EnableQueryEventAspect;
 
 import java.util.Collection;
 
@@ -23,8 +24,8 @@ public class Direccion
 	@Relation(type=Persona.class,att="direccion")
 	private Collection<Persona> personas;
 
-	public Collection<Persona> getPersonas()
-	{
+	@EnableQueryEventAspect()
+	public Collection<Persona> getPersonas(){
 		return personas;
 	}
 
@@ -78,10 +79,4 @@ public class Direccion
 		String sOCalle=o.getCalle()!=null?o.getCalle():"null";
 		return ok&&sCalle.equals(sOCalle);
 	}
-
-
-
-
-
-
 }

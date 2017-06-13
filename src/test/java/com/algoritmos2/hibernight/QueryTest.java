@@ -10,8 +10,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import javax.naming.ConfigurationException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -74,7 +72,6 @@ public class QueryTest extends DataBaseConfig {
     @Test
     public void query() throws SQLException, InvocationTargetException, NoSuchMethodException, ClassNotFoundException, InstantiationException, IllegalAccessException {
         String xql = "$nombre=? and $direccion.numero=?";
-        //List<Persona> personas = Query.query(connection,Persona.class, xql, "Diego", 111);
-
+        List<Persona> personas = Query.query(connection, Persona.class, xql, "Diego", 111);
     }
 }

@@ -12,5 +12,7 @@
 /home/diego/desarrollos/hibernight/src/main/java/com/algoritmos2/hibernight/model/QueryBuilder.java
 /home/diego/desarrollos/hibernight/src/main/java/com/algoritmos2/hibernight/model/Dept.java
 /home/diego/desarrollos/hibernight/src/main/java/com/algoritmos2/hibernight/model/Direccion.java
+/home/diego/desarrollos/hibernight/src/main/java/com/algoritmos2/hibernight/model/aspect/QueyEventAspect.java
 /home/diego/desarrollos/hibernight/src/main/java/com/algoritmos2/hibernight/config/DataBaseConfig.java
+/home/diego/desarrollos/hibernight/src/main/java/com/algoritmos2/hibernight/model/aspect/EnableQueryEventAspect.java
 /home/diego/desarrollos/hibernight/src/main/java/com/algoritmos2/hibernight/model/annotations/Table.java
