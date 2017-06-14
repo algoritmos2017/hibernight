@@ -1,19 +1,29 @@
 package com.algoritmos2.hibernight.model.mapper;
 
+import com.algoritmos2.hibernight.model.Direccion;
 import com.algoritmos2.hibernight.model.Persona;
 import com.algoritmos2.hibernight.model.QueryBuilder;
 import com.algoritmos2.hibernight.model.annotations.Column;
 import com.algoritmos2.hibernight.model.annotations.Id;
+import com.algoritmos2.hibernight.model.annotations.Relation;
 import com.algoritmos2.hibernight.model.annotations.Table;
 import com.algoritmos2.hibernight.repository.Query;
+import net.sf.cglib.proxy.Callback;
+import net.sf.cglib.proxy.Enhancer;
+import net.sf.cglib.proxy.MethodInterceptor;
+import net.sf.cglib.proxy.MethodProxy;
+import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.logging.FileHandler;
 
 public class Mapper {
 
@@ -163,15 +173,15 @@ public class Mapper {
                 case '$':
                     break;
                 case '.':
-				try {
-					where += analizarNombreDeTabla(aux,clase);
-				} catch (NoSuchFieldException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (SecurityException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+                    try {
+                        where += analizarNombreDeTabla(aux, clase);
+                    } catch (NoSuchFieldException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    } catch (SecurityException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
                     aux = "";
                     where += '.';
                     break;
@@ -228,30 +238,49 @@ public class Mapper {
         }
         return true;
     }
-    
-    private static <T> String analizarNombreDeTabla(String fieldName, Class<T> clase) throws NoSuchFieldException, SecurityException{
-    	
-    	Field atributoBuscado = clase.getDeclaredField(fieldName);
-    	
-    	return tableName(atributoBuscado.getType());
+
+    private static <T> String analizarNombreDeTabla(String fieldName, Class<T> clase) throws NoSuchFieldException, SecurityException {
+
+        Field atributoBuscado = clase.getDeclaredField(fieldName);
+
+        return tableName(atributoBuscado.getType());
     }
 
-    public static <T> Object getObjectFrom(Class<T> dtoClass, ResultSet rs) throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
-
-        Class<?> clazz = Class.forName(dtoClass.getName());
-        Constructor<?> constructor = clazz.getConstructor();
+    public static <T> Object getObjectFrom(Class<T> dtoClass, ResultSet rs, Connection connection) throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
+        Constructor<?> constructor = dtoClass.getConstructor();
         Object parentClassInstance = constructor.newInstance();
 
-        Arrays.stream(clazz.getDeclaredFields())
+        Optional<Field> relationedField = Arrays.stream(dtoClass.getDeclaredFields()).filter(field -> null != field.getAnnotation(Relation.class)).findFirst();
+        if(relationedField.isPresent()){
+            Enhancer enhancer = new Enhancer();
+            enhancer.setSuperclass(dtoClass);
+            parentClassInstance = enhancer.create(dtoClass, new MethodInterceptor() {
+                        @Override
+                        public Object intercept(Object o, Method method, Object[] objects, MethodProxy methodProxy) throws Throwable {
+                            Class<?> collectionConcreteClass = Class.forName(((ParameterizedTypeImpl) relationedField.get().getGenericType()).getActualTypeArguments()[0].getTypeName());
+                            if (method.getName().equalsIgnoreCase("get" + relationedField.get().getName())) {
+                                System.out.println("Interceptando ....");
+                                Field primaryKeyField = Arrays.stream(dtoClass.getDeclaredFields()).filter(field -> null != field.getAnnotation(Id.class)).findFirst().orElseGet(null);
+                                return Query.query(connection, collectionConcreteClass, "$" + tableName(Class.forName(o.getClass().getTypeName().split("\\$")[0])) + "." + primaryKeyField.getName() + "=?", 1);
+                            } else {
+                                return methodProxy.invokeSuper(o, objects);
+                            }
+                        }
+                    });
+        }
+
+        Object instance = parentClassInstance;
+
+        Arrays.stream(dtoClass.getDeclaredFields())
                 .forEach(field -> {
                     try {
                         if (null != field.getAnnotation(Column.class)) {
                             if (null != field.getType().getAnnotation(Table.class)) {
-                                Object classObject = getObjectFrom(field.getType(), rs);
+                                Object classObject = getObjectFrom(field.getType(), rs, connection);
 
-                                Field declaredField = parentClassInstance.getClass().getDeclaredField(field.getName());
+                                Field declaredField = dtoClass.getDeclaredField(field.getName());
                                 declaredField.setAccessible(Boolean.TRUE);
-                                declaredField.set(parentClassInstance, classObject);
+                                declaredField.set(instance, classObject);
                             } else {
                                 Class<?> fieldClazz = Class.forName(field.getType().getName());
                                 Constructor<?> ctor = fieldClazz.getConstructor(String.class);
@@ -259,9 +288,9 @@ public class Mapper {
                                         rs.getString(dtoClass.getAnnotation(Table.class).name() + "." + field.getAnnotation(Column.class).name())
                                 });
 
-                                Field declaredField = parentClassInstance.getClass().getDeclaredField(field.getName());
+                                Field declaredField = dtoClass.getDeclaredField(field.getName());
                                 declaredField.setAccessible(Boolean.TRUE);
-                                declaredField.set(parentClassInstance, object);
+                                declaredField.set(instance, object);
                             }
                         }
                     } catch (InstantiationException e) {
@@ -290,6 +319,42 @@ public class Mapper {
 
         return parentClassInstance;
 
+    }
+
+    public static <T> Object createInterceptedObject(Object o, Connection connection) {
+        Object result = o;
+        if(Arrays.stream(o.getClass().getDeclaredFields()).anyMatch(field -> null != field.getAnnotation(Relation.class))){
+            Enhancer enhancer = new Enhancer();
+
+            Arrays.stream(o.getClass().getDeclaredFields()).forEach(field -> {
+                if (null != field.getAnnotation(Relation.class)) {
+
+                    //Tomo la clase que esta dentro de la coleccion, para poder armar la query
+                    Field fieldPrimaryKeyName = Arrays.stream(o.getClass().getDeclaredFields())
+                            .filter(pkfield -> null != pkfield.getAnnotation(Id.class))
+                            .findFirst()
+                            .orElseGet(null);
+
+                    enhancer.create(o.getClass(), new MethodInterceptor() {
+                        @Override
+                        public Object intercept(Object o, Method method, Object[] objects, MethodProxy methodProxy) throws Throwable {
+                            Class<?> collectionConcreteClass = Class.forName(((ParameterizedTypeImpl) field.getGenericType()).getActualTypeArguments()[0].getTypeName());
+                            if (method.getName().equalsIgnoreCase("get" + field.getName())) {
+                                //System.out.println("Interceptando ...." + collectionClass);
+                                //System.out.println(Query._query(collectionClass, "$" + tableName(clazz) + "." + fieldPrimaryKeyName.getName() + "=?", 1));
+                                return Query.query(connection, collectionConcreteClass, "$" + tableName(o.getClass()) + "." + fieldPrimaryKeyName.getName() + "=?", fieldPrimaryKeyName.get(o));
+                            } else {
+                                return methodProxy.invokeSuper(o, objects);
+                            }
+                        }
+                    });
+                }
+            });
+
+            result = enhancer;
+        }
+
+        return result;
     }
 
     /* M�todo muy �ltil recibe una clase A y devuelve un set ordenado con todas las
@@ -325,7 +390,7 @@ public class Mapper {
         }
 
     /*  Ya obtuvimos todas las relaciones a otras tablas de esta clase
-    	as� que las y la sacamos de las que se van a evaluar y de las evaluadas */
+        as� que las y la sacamos de las que se van a evaluar y de las evaluadas */
         clasesAEvaluar.remove(claseActual);
         clasesEvaluadas.add(claseActual);
 
@@ -372,6 +437,10 @@ public class Mapper {
         return traduccion;
     }
 
+    private static void main(String args[]) {
+        System.out.println(traducirDeObjetosARelacional(Persona.class));
+    }
+
     public <T> String createTableQuery(Class<T> clazz) {
         Map<String, String> fieldsByType = new HashMap<>();
 
@@ -395,8 +464,5 @@ public class Mapper {
                 .replace("?statement", builder.toString());
 
         return transformedQuery;
-    }
-    private static void main(String args[]){
-    	System.out.println(traducirDeObjetosARelacional(Persona.class));
     }
 }

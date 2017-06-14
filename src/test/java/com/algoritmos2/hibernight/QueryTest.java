@@ -6,6 +6,7 @@ import com.algoritmos2.hibernight.model.Persona;
 import com.algoritmos2.hibernight.model.mapper.Mapper;
 import com.algoritmos2.hibernight.repository.Query;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -74,7 +75,12 @@ public class QueryTest extends DataBaseConfig {
     @Test
     public void query() throws SQLException, InvocationTargetException, NoSuchMethodException, ClassNotFoundException, InstantiationException, IllegalAccessException {
         String xql = "$nombre=? and $direccion.numero=?";
-        //List<Persona> personas = Query.query(connection,Persona.class, xql, "Diego", 111);
+        //String l = Query._query(Persona.class,"$direccion.idDireccion=?",1);
+        //System.out.println(l);
+        List<Persona> personas = Query.query(connection,Persona.class, xql, "Diego", 111);
+
+        Assert.assertEquals("111",personas.get(0).getDireccion().getNumero().toString());
+        System.out.println(personas.get(0).getDireccion().getPersonas());
 
     }
 }

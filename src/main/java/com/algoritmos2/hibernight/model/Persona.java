@@ -4,7 +4,7 @@ import com.algoritmos2.hibernight.model.annotations.Column;
 import com.algoritmos2.hibernight.model.annotations.Id;
 import com.algoritmos2.hibernight.model.annotations.Table;
 
-@Table(name="persona")
+@Table(name="Persona")
 public class Persona
 {
 	@Id(strategy=Id.IDENTITY)

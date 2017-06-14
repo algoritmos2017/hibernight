@@ -61,7 +61,6 @@ public class Query {
     // Invoca a: _query para obtener el SQL que se debe ejecutar
     // Retorna: una lista de objetos de tipo T
     public static <T> List<T> query(Connection con, Class<T> dtoClass, String xql, Object... args) throws SQLException, IllegalAccessException, InvocationTargetException, InstantiationException, NoSuchMethodException, ClassNotFoundException {
-        //String realQuery = "Select * from Persona inner join direccion on Persona.id_direccion=direccion.id_direccion inner join ocupacion on Persona.id_ocupacion=ocupacion.id_ocupacion inner join tipo_ocupacion on ocupacion.id_tipo_ocupacion=tipo_ocupacion.id_tipoocupacion";
         String realQuery = _query(dtoClass, xql,args);
         List<Object> result = new ArrayList();
         Statement stmt = null;
@@ -76,11 +75,9 @@ public class Query {
 
         Class<?> clazz = Class.forName(dtoClass.getName());
         Constructor<?> constructor = clazz.getConstructor();
-        Object objectInstance = constructor.newInstance();
 
         while (rs.next()) {
-
-            result.add(Mapper.getObjectFrom(dtoClass,rs));
+            result.add(Mapper.getObjectFrom(dtoClass,rs, con));
         }
 
         return (List<T>) result;

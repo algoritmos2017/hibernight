@@ -23,8 +23,7 @@ public class Direccion
 	@Relation(type=Persona.class,att="direccion")
 	private Collection<Persona> personas;
 
-	public Collection<Persona> getPersonas()
-	{
+	public Collection<Persona> getPersonas(){
 		return personas;
 	}
 

@@ -8,7 +8,7 @@ import com.algoritmos2.hibernight.model.annotations.Table;
 public class TipoOcupacion
 {
 	@Id(strategy=Id.IDENTITY)
-	@Column(name="id_tipo_ocupacion")
+	@Column(name="id_tipoocupacion")
 	private Integer idTipoOcupacion;
 
 	@Column(name="descripcion")
