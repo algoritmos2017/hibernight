@@ -1,6 +1,8 @@
 package com.algoritmos2.hibernight.profe;
 
+import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.List;
 
 import com.algoritmos2.hibernight.config.DataBaseConfig;
@@ -13,8 +15,7 @@ import org.junit.Test;
 public class FindTest extends DataBaseConfig {
 
     @Test
-    public void testFind()
-    {
+    public void testFind() throws IllegalAccessException, InstantiationException, SQLException, NoSuchMethodException, InvocationTargetException, ClassNotFoundException {
         Connection con = getConnection();
 
         // verifico el find

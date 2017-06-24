@@ -25,6 +25,7 @@ public class _queryTest {
 	public void _queryConArgumentos(){
 		xql = "$nombre=? and $direccion.calle=?";
 		String sqlDeLaFuncion = Query._query(Persona.class, xql, "Juan", 2);
+		//System.out.println(Query._query(Persona.class,""));
 		
 		//System.out.println(Mapper.traducirDeObjetosARelacional(Persona.class));
 		

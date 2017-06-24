@@ -9,11 +9,21 @@ public class DataBaseConfig {
     Connection connection;
 
     protected Connection getConnection() {
+
+    	/* MySql
+    	*/
         String url = "jdbc:mysql://localhost:3306/hibernight";
         String driver = "com.mysql.jdbc.Driver";
         String user = "root";
         String pass = "";
 
+    	// HSQLDB
+    	/*
+    	 String url = "jdbc:hsqldb:hsql://localhost/xdb";
+         String driver = "org.hsqldb.jdbcDriver";
+         String user = "sa";
+         String pass = "";
+*/
         try {
             Class.forName(driver).newInstance();
         } catch (InstantiationException e) {

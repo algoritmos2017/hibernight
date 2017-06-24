@@ -12,7 +12,7 @@ public class Persona
 	private Integer idPersona;
 	
 	@Column(name="nombre")
-	private String nombre;
+	public String nombre;
 		
 	@Column(name="id_direccion")
 	public Direccion direccion;
