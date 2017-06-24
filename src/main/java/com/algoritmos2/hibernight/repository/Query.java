@@ -6,6 +6,7 @@ import com.algoritmos2.hibernight.model.annotations.Id;
 import com.algoritmos2.hibernight.model.annotations.Table;
 import com.algoritmos2.hibernight.model.mapper.Mapper;
 
+import javax.sound.midi.SysexMessage;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -54,7 +55,7 @@ public class Query {
 
         Mapper.obternerWhere(dtoClass, xql, queryBuilder, args);
         if(!queryBuilder.getWhere().equals(" ")){
-        sql += " WHERE " + queryBuilder.getWhere();
+        sql += " WHERE " + dtoClass.getAnnotation(Table.class).name() + "." + queryBuilder.getWhere();
         }
 
         return sql;
@@ -67,7 +68,7 @@ public class Query {
         String realQuery = _query(dtoClass, xql,args);
         List<Object> result = new ArrayList();
         Statement stmt = null;
-
+        System.out.println(realQuery);
         try {
             stmt = con.createStatement();
         } catch (SQLException e) {

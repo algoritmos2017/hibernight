@@ -10,7 +10,7 @@ import java.util.List;
 @Table(name = "persona")
 public class Persona {
 
-    @Column(name = "ocupacion", fetchType = Column.LAZY)
+    @Column(name = "id_ocupacion", fetchType = Column.LAZY)
     public Ocupacion ocupacion;
 
     @Relation(att = "persona", type = PersonaDireccion.class)
