@@ -17,21 +17,17 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 public class Query {
 
     // Retorna: el SQL correspondiente a la clase dtoClass acotado por xql
     public static <T> String _query(Class<T> dtoClass, String xql, Object... args) {
         QueryBuilder queryBuilder = new QueryBuilder();
-        List<String> fields = new ArrayList<>();
-        Pattern pattern = Pattern.compile("\\$(.*?)=\\?");
-        Matcher matcher = pattern.matcher(xql);
-
-        while (matcher.find()) {
-            fields.add(matcher.group(1));
-        }
 
         queryBuilder.setTablaName(Mapper.tableName(dtoClass));
         Mapper.obtenerCampos(dtoClass, queryBuilder);
@@ -116,13 +112,49 @@ public class Query {
 
     // Retorna: el SQL correspondiente a la clase dtoClass acotado por xql
     public static <T> String _update(Class<T> dtoClass, String xql) {
-        return null;
+        String columns = xql.split("set")[1].split("where")[0];
+        String criterio = xql.split("set")[1].split("where")[1];
+
+        List<String> columnNames = Mapper.fromFieldsToTableColumns(columns, dtoClass);
+        List<String> criteriaColumnNames = Mapper.fromFieldsToTableColumns(criterio, dtoClass);
+
+        StringBuilder fieldsQuery = new StringBuilder("UPDATE " + dtoClass.getAnnotation(Table.class).name() + " SET ");
+        StringBuilder names = new StringBuilder();
+        StringBuilder criteria = new StringBuilder();
+
+        columnNames.stream().forEach(name -> {
+            names.append(name).append("=").append("?").append(",");
+        });
+
+        criteriaColumnNames.stream().forEach(crit -> {
+            criteria.append(crit).append("=").append("?").append(",");
+        });
+
+        fieldsQuery.append(names.toString().substring(0,names.toString().length() -1));
+        fieldsQuery.append(" WHERE ");
+        fieldsQuery.append(criteria.toString().substring(0,criteria.toString().length() -1));
+
+        return fieldsQuery.toString();
     }
 
     // Invoca a: _update para obtener el SQL que se debe ejecutar
     // Retorna: la cantidad de filas afectadas luego de ejecutar el SQL
-    public static int update(Connection con, Class<?> dtoClass, String xql, Object... args) {
-        return 0;
+    public static int update(Connection con, Class<?> dtoClass, String xql, Object... args) throws SQLException {
+        List<String> values = Arrays.stream(args).map(name -> Mapper.analizarArgumento((String) name))
+                .collect(Collectors.toList());
+
+
+        String query = String.format(_update(dtoClass, xql).replace("?","%s"), values.toArray());
+
+        Statement stmt = null;
+        try {
+            stmt = con.createStatement();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        System.out.println(query);
+        return stmt.executeUpdate(query);
     }
 
     // Invoca a: update

@@ -17,6 +17,8 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Mapper {
 
@@ -35,6 +37,34 @@ public class Mapper {
             put(String.class, "VARCHAR(255)");
             put(Integer.class, "INTEGER");
         }};
+    }
+
+    private static List<String> fromXqlToFields(String xql){
+        List<String> fields = new ArrayList<>();
+        Pattern pattern = Pattern.compile("\\$(.*?)=\\?");
+        Matcher matcher = pattern.matcher(xql);
+
+        while (matcher.find()) {
+            fields.add(matcher.group(1));
+        }
+
+        return fields;
+    }
+
+    public static <T> List<String> fromFieldsToTableColumns(String xql, Class<T> clazz){
+        List<String> fields = fromXqlToFields(xql);
+        List<String> fieldTableNames = new ArrayList<>();
+
+        fields.stream().forEach(field -> {
+            try {
+                Field f = clazz.getDeclaredField(field);
+                fieldTableNames.add(f.getName());
+            } catch (NoSuchFieldException e) {
+                throw new RuntimeException("No hay una columna con ese nombre");
+            }
+        });
+
+        return fieldTableNames;
     }
 
     public static String obtenerFk(Class<?> dtoClass, Class<?> dtoClass2) {
@@ -205,7 +235,7 @@ public class Mapper {
         }
     }
 
-    private static String analizarArgumento(String argumento) {
+    public static String analizarArgumento(String argumento) {
         if (esCadenaAlfnum(argumento))//Si es alfanum�rica le pone las comillas
             return "\'" + argumento + "\'";
         return argumento;//Si no, la retorna como una constante
