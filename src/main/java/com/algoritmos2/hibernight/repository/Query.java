@@ -88,7 +88,7 @@ public class Query {
 
     // Retorna: una fila identificada por id o null si no existe
     // Invoca a: query
-    private static <T> T find(Connection con, Class<T> dtoClass, Object id) {
+    public static <T> T find(Connection con, Class<T> dtoClass, Object id) {
         return null;
     }
 

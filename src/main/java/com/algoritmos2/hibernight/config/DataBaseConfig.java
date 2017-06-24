@@ -8,7 +8,7 @@ public class DataBaseConfig {
 
     Connection connection;
 
-    protected Connection getConnection() throws SQLException {
+    protected Connection getConnection() {
         String url = "jdbc:mysql://localhost:3306/hibernight";
         String driver = "com.mysql.jdbc.Driver";
         String user = "root";
@@ -25,7 +25,11 @@ public class DataBaseConfig {
         }
 
         System.out.println("Connected to the database");
-        connection = DriverManager.getConnection(url, user, pass);
+        try {
+            connection = DriverManager.getConnection(url, user, pass);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         return connection;
     }
 
