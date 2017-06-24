@@ -45,14 +45,19 @@ public class QueryTest extends DataBaseConfig {
         //stmt.executeUpdate(mapper.createTableQuery(Direccion.class));
     }
 
-    /*
+    
     @Test
-    public void query() throws SQLException {
-        String xql = "$nombre=? and $direccion.calle=?";
+    public void query1() throws SQLException, IllegalAccessException, InvocationTargetException, InstantiationException, NoSuchMethodException, ClassNotFoundException {
+        String xql = "";
 
-        //Query.query(connection, Persona.class, xql, "pepito", "Av Rivadavia 233");
+       List <Direccion> lista = Query.query(connection, Direccion.class, xql);
+       for(Direccion p : lista ){
+    	   System.out.println(p.getPersonas());
+       }
+        
+        
     }
-    */
+    
 
     @Test
     public void patternToGetFields() throws SQLException {

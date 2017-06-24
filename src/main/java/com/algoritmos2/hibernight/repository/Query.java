@@ -2,6 +2,7 @@ package com.algoritmos2.hibernight.repository;
 
 import com.algoritmos2.hibernight.model.QueryBuilder;
 import com.algoritmos2.hibernight.model.annotations.Column;
+import com.algoritmos2.hibernight.model.annotations.Id;
 import com.algoritmos2.hibernight.model.annotations.Table;
 import com.algoritmos2.hibernight.model.mapper.Mapper;
 
@@ -52,8 +53,9 @@ public class Query {
         }
 
         Mapper.obternerWhere(dtoClass, xql, queryBuilder, args);
-        
+        if(!queryBuilder.getWhere().equals(" ")){
         sql += " WHERE " + queryBuilder.getWhere();
+        }
 
         return sql;
     }
@@ -74,13 +76,15 @@ public class Query {
 
         ResultSet rs = stmt.executeQuery(realQuery);
 
-        Class<?> clazz = Class.forName(dtoClass.getName());
+        /*
+         Class<?> clazz = Class.forName(dtoClass.getName());
         Constructor<?> constructor = clazz.getConstructor();
         Object objectInstance = constructor.newInstance();
-
+         */
+        
         while (rs.next()) {
 
-            result.add(Mapper.getObjectFrom(dtoClass,rs));
+            result.add(Mapper.getObjectFrom(dtoClass,rs,con));
         }
 
         return (List<T>) result;
@@ -88,14 +92,25 @@ public class Query {
 
     // Retorna: una fila identificada por id o null si no existe
     // Invoca a: query
-    private static <T> T find(Connection con, Class<T> dtoClass, Object id) {
-        return null;
+    public static <T> T find(Connection con, Class<T> dtoClass, Object id) throws IllegalAccessException, InvocationTargetException, InstantiationException, NoSuchMethodException, ClassNotFoundException, SQLException, SecurityException {
+    	
+    	Field[] atributos = dtoClass.getDeclaredFields();
+    	String atributo = null;
+    	for(Field f : atributos){
+    		if(null != f.getDeclaredAnnotation(Id.class) && f.getDeclaredAnnotation(Id.class).strategy() == Id.IDENTITY ){
+    			atributo = f.getName();
+    		}
+    	}
+    	String xql = "$ " +atributo + " =? ";
+    	List<T> lista = Query.query(con,dtoClass,xql,id);
+        return lista.isEmpty() ? null : lista.get(0) ;
     }
 
     // Retorna: una todasa las filas de la tabla representada por dtoClass
     // Invoca a: query
-    private static <T> List<T> findAll(Connection con, Class<T> dtoClass) {
-        return null;
+    public static <T> List<T> findAll(Connection con, Class<T> dtoClass) throws IllegalAccessException, InvocationTargetException, InstantiationException, NoSuchMethodException, ClassNotFoundException, SQLException {
+    	List<T> lista = Query.query(con,dtoClass,"");
+        return lista.isEmpty() ? null : lista;
     }
 
     // Retorna: el SQL correspondiente a la clase dtoClass acotado por xql

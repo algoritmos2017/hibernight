@@ -7,10 +7,13 @@ import com.algoritmos2.hibernight.model.annotations.Id;
 import com.algoritmos2.hibernight.model.annotations.Table;
 import com.algoritmos2.hibernight.repository.Query;
 
+import net.sf.cglib.proxy.Enhancer;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
@@ -204,7 +207,7 @@ public class Mapper {
 
     private static String analizarArgumento(String argumento) {
         if (esCadenaAlfnum(argumento))//Si es alfanum�rica le pone las comillas
-            return "\"" + argumento + "\"";
+            return "\'" + argumento + "\'";
         return argumento;//Si no, la retorna como una constante
     }
 
@@ -236,18 +239,19 @@ public class Mapper {
     	return tableName(atributoBuscado.getType());
     }
 
-    public static <T> Object getObjectFrom(Class<T> dtoClass, ResultSet rs) throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
+    public static <T> Object getObjectFrom(Class<T> dtoClass, ResultSet rs,Connection con) throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
 
         Class<?> clazz = Class.forName(dtoClass.getName());
         Constructor<?> constructor = clazz.getConstructor();
         Object parentClassInstance = constructor.newInstance();
+        T proxy = (T)Enhancer.create(dtoClass,new Handler(parentClassInstance,con));
 
         Arrays.stream(clazz.getDeclaredFields())
                 .forEach(field -> {
                     try {
                         if (null != field.getAnnotation(Column.class)) {
                             if (null != field.getType().getAnnotation(Table.class)) {
-                                Object classObject = getObjectFrom(field.getType(), rs);
+                                Object classObject = getObjectFrom(field.getType(), rs,con);
 
                                 Field declaredField = parentClassInstance.getClass().getDeclaredField(field.getName());
                                 declaredField.setAccessible(Boolean.TRUE);
@@ -288,7 +292,7 @@ public class Mapper {
                     }
                 });
 
-        return parentClassInstance;
+        return proxy;    
 
     }
 
