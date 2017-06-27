@@ -25,172 +25,183 @@ import java.util.stream.Collectors;
 
 public class Query {
 
-    // Retorna: el SQL correspondiente a la clase dtoClass acotado por xql
-    public static <T> String _query(Class<T> dtoClass, String xql, Object... args) {
-        QueryBuilder queryBuilder = new QueryBuilder();
+	// Retorna: el SQL correspondiente a la clase dtoClass acotado por xql
+	public static <T> String _query(Class<T> dtoClass, String xql, Object... args) {
+		QueryBuilder queryBuilder = new QueryBuilder();
 
-        queryBuilder.setTablaName(Mapper.tableName(dtoClass));
-        Mapper.obtenerCampos(dtoClass, queryBuilder);
+		queryBuilder.setTablaName(Mapper.tableName(dtoClass));
+		Mapper.obtenerCampos(dtoClass, queryBuilder);
 
-        String sql = "";
-        sql += "SELECT ";
+		String sql = "";
+		sql += "SELECT ";
 
-        for (final String campo : queryBuilder.getColumns()) {
-            sql += campo + ", ";
-        }
-        //Sacar esta villereada
-        sql = sql.substring(0, sql.length()-2) + " ";
+		for (final String campo : queryBuilder.getColumns()) {
+			sql += campo + ", ";
+		}
+		// Sacar esta villereada
+		sql = sql.substring(0, sql.length() - 2) + " ";
+		
+		sql += " FROM " + queryBuilder.getTablaName();
+		
+		List<String> joins = queryBuilder.getJoins();
+		
+		for (final String join : joins) {
+			sql += join + " ";
+		}
+		
+		Mapper.obternerWhere(dtoClass, xql, queryBuilder, args);
+		if (!queryBuilder.getWhere().equals(" ")) {
+			sql += " WHERE " + dtoClass.getAnnotation(Table.class).name() + "." + queryBuilder.getWhere();
+		}
+		
+		return sql;
+	}
 
-        sql += " FROM " + queryBuilder.getTablaName();
+	// Invoca a: _query para obtener el SQL que se debe ejecutar
+	// Retorna: una lista de objetos de tipo T
+	public static <T> List<T> query(Connection con, Class<T> dtoClass, String xql, Object... args)
+			throws SQLException, IllegalAccessException, InvocationTargetException, InstantiationException,
+			NoSuchMethodException, ClassNotFoundException {
+		// String realQuery = "Select * from Persona inner join direccion on
+		// Persona.id_direccion=direccion.id_direccion inner join ocupacion on
+		// Persona.id_ocupacion=ocupacion.id_ocupacion inner join tipo_ocupacion
+		// on ocupacion.id_tipo_ocupacion=tipo_ocupacion.id_tipoocupacion";
+		String realQuery = _query(dtoClass, xql, args);
+		List<Object> result = new ArrayList();
+		Statement stmt = null;
+		System.out.println(realQuery);
+		try {
+			stmt = con.createStatement();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 
-        List<String> joins = queryBuilder.getJoins();
+		ResultSet rs = stmt.executeQuery(realQuery);
 
-        for (final String join : joins) {
-            sql += join + " ";
-        }
+		/*
+		 * Class<?> clazz = Class.forName(dtoClass.getName()); Constructor<?>
+		 * constructor = clazz.getConstructor(); Object objectInstance =
+		 * constructor.newInstance();
+		 */
 
-        Mapper.obternerWhere(dtoClass, xql, queryBuilder, args);
-        if(!queryBuilder.getWhere().equals(" ")){
-        sql += " WHERE " + dtoClass.getAnnotation(Table.class).name() + "." + queryBuilder.getWhere();
-        }
+		while (rs.next()) {
 
-        return sql;
-    }
+			result.add(Mapper.getObjectFrom(dtoClass, rs, con));
+		}
 
-    // Invoca a: _query para obtener el SQL que se debe ejecutar
-    // Retorna: una lista de objetos de tipo T
-    public static <T> List<T> query(Connection con, Class<T> dtoClass, String xql, Object... args) throws SQLException, IllegalAccessException, InvocationTargetException, InstantiationException, NoSuchMethodException, ClassNotFoundException {
-        //String realQuery = "Select * from Persona inner join direccion on Persona.id_direccion=direccion.id_direccion inner join ocupacion on Persona.id_ocupacion=ocupacion.id_ocupacion inner join tipo_ocupacion on ocupacion.id_tipo_ocupacion=tipo_ocupacion.id_tipoocupacion";
-        String realQuery = _query(dtoClass, xql,args);
-        List<Object> result = new ArrayList();
-        Statement stmt = null;
-        System.out.println(realQuery);
-        try {
-            stmt = con.createStatement();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+		return (List<T>) result;
+	}
 
-        ResultSet rs = stmt.executeQuery(realQuery);
+	// Retorna: una fila identificada por id o null si no existe
+	// Invoca a: query
+	public static <T> T find(Connection con, Class<T> dtoClass, Object id)
+			throws IllegalAccessException, InvocationTargetException, InstantiationException, NoSuchMethodException,
+			ClassNotFoundException, SQLException, SecurityException {
 
-        /*
-         Class<?> clazz = Class.forName(dtoClass.getName());
-        Constructor<?> constructor = clazz.getConstructor();
-        Object objectInstance = constructor.newInstance();
-         */
-        
-        while (rs.next()) {
+		Field[] atributos = dtoClass.getDeclaredFields();
+		String atributo = null;
+		for (Field f : atributos) {
+			if (null != f.getDeclaredAnnotation(Id.class)
+					&& f.getDeclaredAnnotation(Id.class).strategy() == Id.IDENTITY) {
+				atributo = f.getName();
+			}
+		}
+		String xql = "$ " + atributo + " =? ";
+		List<T> lista = Query.query(con, dtoClass, xql, id);
+		return lista.isEmpty() ? null : lista.get(0);
+	}
 
-            result.add(Mapper.getObjectFrom(dtoClass,rs,con));
-        }
+	// Retorna: una todasa las filas de la tabla representada por dtoClass
+	// Invoca a: query
+	public static <T> List<T> findAll(Connection con, Class<T> dtoClass)
+			throws IllegalAccessException, InvocationTargetException, InstantiationException, NoSuchMethodException,
+			ClassNotFoundException, SQLException {
+		List<T> lista = Query.query(con, dtoClass, "");
+		return lista.isEmpty() ? null : lista;
+	}
 
-        return (List<T>) result;
-    }
+	// Retorna: el SQL correspondiente a la clase dtoClass acotado por xql
+	public static <T> String _update(Class<T> dtoClass, String xql) {
+		String columns = xql.split("set")[1].split("where")[0];
+		String criterio = xql.split("set")[1].split("where")[1];
 
-    // Retorna: una fila identificada por id o null si no existe
-    // Invoca a: query
-    public static <T> T find(Connection con, Class<T> dtoClass, Object id) throws IllegalAccessException, InvocationTargetException, InstantiationException, NoSuchMethodException, ClassNotFoundException, SQLException, SecurityException {
-    	
-    	Field[] atributos = dtoClass.getDeclaredFields();
-    	String atributo = null;
-    	for(Field f : atributos){
-    		if(null != f.getDeclaredAnnotation(Id.class) && f.getDeclaredAnnotation(Id.class).strategy() == Id.IDENTITY ){
-    			atributo = f.getName();
-    		}
-    	}
-    	String xql = "$ " +atributo + " =? ";
-    	List<T> lista = Query.query(con,dtoClass,xql,id);
-        return lista.isEmpty() ? null : lista.get(0) ;
-    }
+		List<String> columnNames = Mapper.fromFieldsToTableColumns(columns, dtoClass);
+		List<String> criteriaColumnNames = Mapper.fromFieldsToTableColumns(criterio, dtoClass);
 
-    // Retorna: una todasa las filas de la tabla representada por dtoClass
-    // Invoca a: query
-    public static <T> List<T> findAll(Connection con, Class<T> dtoClass) throws IllegalAccessException, InvocationTargetException, InstantiationException, NoSuchMethodException, ClassNotFoundException, SQLException {
-    	List<T> lista = Query.query(con,dtoClass,"");
-        return lista.isEmpty() ? null : lista;
-    }
+		StringBuilder fieldsQuery = new StringBuilder("UPDATE " + dtoClass.getAnnotation(Table.class).name() + " SET ");
+		StringBuilder names = new StringBuilder();
+		StringBuilder criteria = new StringBuilder();
 
-    // Retorna: el SQL correspondiente a la clase dtoClass acotado por xql
-    public static <T> String _update(Class<T> dtoClass, String xql) {
-        String columns = xql.split("set")[1].split("where")[0];
-        String criterio = xql.split("set")[1].split("where")[1];
+		columnNames.stream().forEach(name -> {
+			names.append(name).append("=").append("?").append(",");
+		});
 
-        List<String> columnNames = Mapper.fromFieldsToTableColumns(columns, dtoClass);
-        List<String> criteriaColumnNames = Mapper.fromFieldsToTableColumns(criterio, dtoClass);
+		criteriaColumnNames.stream().forEach(crit -> {
+			criteria.append(crit).append("=").append("?").append(",");
+		});
 
-        StringBuilder fieldsQuery = new StringBuilder("UPDATE " + dtoClass.getAnnotation(Table.class).name() + " SET ");
-        StringBuilder names = new StringBuilder();
-        StringBuilder criteria = new StringBuilder();
+		fieldsQuery.append(names.toString().substring(0, names.toString().length() - 1));
+		fieldsQuery.append(" WHERE ");
+		fieldsQuery.append(criteria.toString().substring(0, criteria.toString().length() - 1));
 
-        columnNames.stream().forEach(name -> {
-            names.append(name).append("=").append("?").append(",");
-        });
+		return fieldsQuery.toString();
+	}
+ 
+	// Invoca a: _update para obtener el SQL que se debe ejecutar
+	// Retorna: la cantidad de filas afectadas luego de ejecutar el SQL
+	public static int update(Connection con, Class<?> dtoClass, String xql, Object... args) throws SQLException {
+		List<String> values = Arrays.stream(args).map(name -> Mapper.analizarArgumento((String) name))
+				.collect(Collectors.toList());
 
-        criteriaColumnNames.stream().forEach(crit -> {
-            criteria.append(crit).append("=").append("?").append(",");
-        });
+		String query = String.format(_update(dtoClass, xql).replace("?", "%s"), values.toArray());
 
-        fieldsQuery.append(names.toString().substring(0,names.toString().length() -1));
-        fieldsQuery.append(" WHERE ");
-        fieldsQuery.append(criteria.toString().substring(0,criteria.toString().length() -1));
+		Statement stmt = null;
+		try {
+			stmt = con.createStatement();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 
-        return fieldsQuery.toString();
-    }
+		System.out.println(query);
+		return stmt.executeUpdate(query);
+	}
 
-    // Invoca a: _update para obtener el SQL que se debe ejecutar
-    // Retorna: la cantidad de filas afectadas luego de ejecutar el SQL
-    public static int update(Connection con, Class<?> dtoClass, String xql, Object... args) throws SQLException {
-        List<String> values = Arrays.stream(args).map(name -> Mapper.analizarArgumento((String) name))
-                .collect(Collectors.toList());
+	// Invoca a: update
+	// Que hace?: actualiza todos los campos de la fila identificada por el id
+	// de dto
+	// Retorna: Cuantas filas resultaron modificadas (deberia: ser 1 o 0)
+	public static int update(Connection con, Object dto) {
+		return 0;
+	}
 
+	// Retorna: el SQL correspondiente a la clase dtoClass acotado por xql
+	public static String _delete(Class<?> dtoClass, String xql) {
+		return null;
+	}
 
-        String query = String.format(_update(dtoClass, xql).replace("?","%s"), values.toArray());
-
-        Statement stmt = null;
-        try {
-            stmt = con.createStatement();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        System.out.println(query);
-        return stmt.executeUpdate(query);
-    }
-
-    // Invoca a: update
-    // Que hace?: actualiza todos los campos de la fila identificada por el id de dto
-    // Retorna: Cuantas filas resultaron modificadas (deberia: ser 1 o 0)
-    public static int update(Connection con, Object dto) {
-        return 0;
-    }
-
-    // Retorna: el SQL correspondiente a la clase dtoClass acotado por xql
-    public static String _delete(Class<?> dtoClass, String xql) {
-        return null;
-    }
-
-    // Invoca a: _delete para obtener el SQL que se debe ejecutar
-    // Retorna: la cantidad de filas afectadas luego de ejecutar el SQL
-    public static int delete(Connection con, Class<?> dtoClass, String xql, Object... args) {
-        return 0;
-    }
-
-    // Retorna la cantidad de filas afectadas al eliminar la fila identificada por id
-    // (deberia ser: 1 o 0)
-    // Invoca a: delete
-    public static int delete(Connection con, Class<?> dtoClass, Object id) {
-        return 0;
-    }
-
-    // Retorna: el SQL correspondiente a la clase dtoClass
-    public static String _insert(Class<?> dtoClass) {
-        return null;
-    }
-
-    // Invoca a: _insert para obtener el SQL que se debe ejecutar
-    // Retorna: la cantidad de filas afectadas luego de ejecutar el SQL
-    public static int insert(Connection con, Object dto) {
-        return 0;
-    }
-
+	// Invoca a: _delete para obtener el SQL que se debe ejecutar
+	// Retorna: la cantidad de filas afectadas luego de ejecutar el SQL
+	public static int delete(Connection con, Class<?> dtoClass, String xql, Object... args) {
+		return 0;
+	}
+	
+	// Retorna la cantidad de filas afectadas al eliminar la fila identificada
+	// por id
+	// (deberia ser: 1 o 0)
+	// Invoca a: delete
+	public static int delete(Connection con, Class<?> dtoClass, Object id) {
+		return 0;
+	}
+	
+	// Retorna: el SQL correspondiente a la clase dtoClass
+	public static String _insert(Object dto) {
+		return Mapper._insert(dto);
+	}
+	
+	// Invoca a: _insert para obtener el SQL que se debe ejecutar
+	// Retorna: la cantidad de filas afectadas luego de ejecutar el SQL
+	public static int insert(Connection con, Object dto) {
+		return 0;
+	}
+	
 }

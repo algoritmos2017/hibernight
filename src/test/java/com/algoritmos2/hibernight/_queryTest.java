@@ -19,17 +19,17 @@ import java.util.Set;
 
 public class _queryTest {
 	String xql = "";
-	String sqlEsperado = "SELECT persona.id_persona, persona.nombre, persona.id_direccion, direccion.id_direccion, direccion.calle, direccion.numero, persona.id_ocupacion, ocupacion.id_ocupacion, ocupacion.descripcion, ocupacion.id_tipoocupacion, tipo_ocupacion.id_tipoocupacion, tipo_ocupacion.descripcion  FROM persona INNER JOIN direccion ON persona.id_direccion=direccion.id_direccion  INNER JOIN ocupacion ON persona.id_ocupacion=ocupacion.id_ocupacion  INNER JOIN tipo_ocupacion ON ocupacion.id_tipoocupacion=tipo_ocupacion.id_tipoocupacion  WHERE nombre=\"Juan\" AND direccion.calle=2 ";
+	String sqlEsperado = "SELECT persona.id_persona, persona.nombre, persona.id_direccion, direccion.id_direccion, direccion.calle, direccion.numero, persona.id_ocupacion, ocupacion.id_ocupacion, ocupacion.descripcion, ocupacion.id_tipoocupacion, tipo_ocupacion.id_tipoocupacion, tipo_ocupacion.descripcion  FROM persona INNER JOIN direccion ON persona.id_direccion=direccion.id_direccion  INNER JOIN ocupacion ON persona.id_ocupacion=ocupacion.id_ocupacion  INNER JOIN tipo_ocupacion ON ocupacion.id_tipoocupacion=tipo_ocupacion.id_tipoocupacion  WHERE nombre='Juan' AND direccion.calle=2 ";
 	
 	@Test
 	public void _queryConArgumentos(){
 		xql = "$nombre=? and $direccion.calle=?";
 		String sqlDeLaFuncion = Query._query(Persona.class, xql, "Juan", 2);
-		//System.out.println(Query._query(Persona.class,""));
 		
+		System.out.println(sqlDeLaFuncion);
 		//System.out.println(Mapper.traducirDeObjetosARelacional(Persona.class));
 		
-		Assert.assertTrue(sqlDeLaFuncion.equals(sqlEsperado));
+		Assert.assertEquals(sqlDeLaFuncion, sqlEsperado);
 	}
 	@Test
 	public void _querySinArgumentos(){
@@ -37,7 +37,7 @@ public class _queryTest {
 		String sqlDeLaFuncion = Query._query(Persona.class, xql);
 		
 		//System.out.println(sqlDeLaFuncion);
-		Assert.assertTrue(sqlDeLaFuncion.equals(sqlEsperado));
+		Assert.assertEquals(sqlDeLaFuncion, sqlEsperado);
 	}
 	@Test
 	public void xqlConCaracteresInvalidosSeIgnoran(){
@@ -45,7 +45,7 @@ public class _queryTest {
 		String sqlDeLaFuncion = Query._query(Persona.class, xql);
 		
 		//System.out.println(sqlDeLaFuncion);
-		Assert.assertTrue(sqlDeLaFuncion.equals(sqlEsperado));
+		Assert.assertEquals(sqlDeLaFuncion, sqlEsperado);
 	}
 	@Test(expected = Error.class)
 	public void _queryCantidadMenorDeArgumentosDaError(){
