@@ -176,13 +176,47 @@ public class Query {
 
 	// Retorna: el SQL correspondiente a la clase dtoClass acotado por xql
 	public static String _delete(Class<?> dtoClass, String xql) {
-		return null;
+		QueryBuilder queryBuilder = new QueryBuilder();
+		
+		queryBuilder.setTablaName(Mapper.tableName(dtoClass));
+		
+		Mapper.obternerWhere(dtoClass, xql, queryBuilder);
+		Mapper.analizarTablasWhere(dtoClass, queryBuilder);
+		
+		
+		StringBuilder fieldsQuery = new StringBuilder("DELETE ");
+		
+		fieldsQuery.append(queryBuilder.getTablaName().toString()+ " FROM ");
+		fieldsQuery.append(queryBuilder.getTablaName().toString());	
+		
+		List<String> joins = queryBuilder.getJoins();
+		for (final String join : joins) {
+			fieldsQuery.append(join + " ");
+		}
+		
+		fieldsQuery.append(" WHERE " +queryBuilder.getWhere());	
+		
+		return fieldsQuery.toString();
 	}
 
 	// Invoca a: _delete para obtener el SQL que se debe ejecutar
 	// Retorna: la cantidad de filas afectadas luego de ejecutar el SQL
-	public static int delete(Connection con, Class<?> dtoClass, String xql, Object... args) {
-		return 0;
+	public static int delete(Connection con, Class<?> dtoClass, String xql, Object... args) throws SQLException {
+		List<String> values = Arrays.stream(args).map(name -> Mapper.analizarArgumento((String) name))
+				.collect(Collectors.toList());
+
+		String query = String.format(_delete(dtoClass, xql).replace("?", "%s"), values.toArray());
+
+		Statement stmt = null;
+		try {
+			stmt = con.createStatement();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		System.out.println(query);
+		return stmt.executeUpdate(query);
+		
 	}
 	
 	// Retorna la cantidad de filas afectadas al eliminar la fila identificada
