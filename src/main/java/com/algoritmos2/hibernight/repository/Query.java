@@ -235,6 +235,20 @@ public class Query {
 	// Invoca a: _insert para obtener el SQL que se debe ejecutar
 	// Retorna: la cantidad de filas afectadas luego de ejecutar el SQL
 	public static int insert(Connection con, Object dto) {
+		Statement stmt = null;
+		try {
+			stmt = con.createStatement();
+		} catch (SQLException e) {
+			e.printStackTrace();
+			throw new RuntimeException();
+		}
+		try {
+			stmt.execute(_insert(dto));
+		} catch (SQLException e) {
+			e.printStackTrace();
+			throw new RuntimeException();
+		}
+		
 		return 0;
 	}
 	
