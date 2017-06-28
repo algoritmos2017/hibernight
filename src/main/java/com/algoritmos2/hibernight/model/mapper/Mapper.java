@@ -53,7 +53,6 @@ public class Mapper {
 		while (matcher.find()) {
 			fields.add(matcher.group(1));
 		}
-
 		return fields;
 	}
 
@@ -64,7 +63,7 @@ public class Mapper {
 		fields.stream().forEach(field -> {
 			try {
 				Field f = clazz.getDeclaredField(field);
-				fieldTableNames.add(f.getName());
+                fieldTableNames.add(f.getAnnotation(Column.class).name());
 			} catch (NoSuchFieldException e) {
 				throw new RuntimeException("No hay una columna con ese nombre");
 			}

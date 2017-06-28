@@ -5,6 +5,7 @@ import com.algoritmos2.hibernight.model.annotations.Column;
 import com.algoritmos2.hibernight.model.annotations.Id;
 import com.algoritmos2.hibernight.model.annotations.Table;
 import com.algoritmos2.hibernight.model.mapper.Mapper;
+import com.algoritmos2.hibernight.model.mapper.UBean;
 
 import javax.sound.midi.SysexMessage;
 import java.lang.reflect.Constructor;
@@ -69,7 +70,7 @@ public class Query {
 		String realQuery = _query(dtoClass, xql, args);
 		List<Object> result = new ArrayList();
 		Statement stmt = null;
-		System.out.println(realQuery);
+		//System.out.println(realQuery);
 		try {
 			stmt = con.createStatement();
 		} catch (SQLException e) {
@@ -122,9 +123,9 @@ public class Query {
 
 	// Retorna: el SQL correspondiente a la clase dtoClass acotado por xql
 	public static <T> String _update(Class<T> dtoClass, String xql) {
-		String columns = xql.split("set")[1].split("where")[0];
-		String criterio = xql.split("set")[1].split("where")[1];
-
+		String columns = xql.split("set")[1].split("where")[0].replaceAll("\\s+","");
+		String criterio = xql.split("set")[1].split("where")[1].replaceAll("\\s+","");
+		
 		List<String> columnNames = Mapper.fromFieldsToTableColumns(columns, dtoClass);
 		List<String> criteriaColumnNames = Mapper.fromFieldsToTableColumns(criterio, dtoClass);
 
@@ -150,10 +151,14 @@ public class Query {
 	// Invoca a: _update para obtener el SQL que se debe ejecutar
 	// Retorna: la cantidad de filas afectadas luego de ejecutar el SQL
 	public static int update(Connection con, Class<?> dtoClass, String xql, Object... args) throws SQLException {
-		List<String> values = Arrays.stream(args).map(name -> Mapper.analizarArgumento((String) name))
-				.collect(Collectors.toList());
+		//List<String> values = Arrays.stream(args).map(name -> Mapper.analizarArgumento((String) name))
+		//		.collect(Collectors.toList());
+		for(int i = 0;i < args.length; i++){
+			if(args[i].getClass().equals(String.class)){
+				args[i] = "\'" + args[i] + "\'";
+		}}
 
-		String query = String.format(_update(dtoClass, xql).replace("?", "%s"), values.toArray());
+		String query = String.format(_update(dtoClass, xql).replace("?", "%s"),args);
 
 		Statement stmt = null;
 		try {
@@ -162,7 +167,7 @@ public class Query {
 			e.printStackTrace();
 		}
 
-		System.out.println(query);
+		System.out.println("Update finalizado: " + query);
 		return stmt.executeUpdate(query);
 	}
 
@@ -170,9 +175,36 @@ public class Query {
 	// Que hace?: actualiza todos los campos de la fila identificada por el id
 	// de dto
 	// Retorna: Cuantas filas resultaron modificadas (deberia: ser 1 o 0)
-	public static int update(Connection con, Object dto) {
-		return 0;
-	}
+	public static int update(Connection con, Object dto) throws NoSuchFieldException, SecurityException, SQLException {
+		
+		String xql="set $";
+		String where = " where $";
+		//String[] att = UBean.getAttNames(dto.getClass());
+		Field[] fields = dto.getClass().getDeclaredFields();
+		List<String> att = null;
+		for(Field f: fields){
+			att.add(f.getName());
+		}
+		List <Object> args1 = null;
+		for(String s : att){
+			
+			if(null != dto.getClass().getDeclaredField(s).getAnnotation(Column.class)){
+				xql= xql.concat(s + "=?,$");
+				System.out.println(xql);
+				if(dto.getClass().getDeclaredField(s).isAnnotationPresent(Id.class) && dto.getClass().getDeclaredField(s).getAnnotation(Id.class).strategy() == Id.IDENTITY){
+					where = where.concat(s+ "=?");
+				}
+				args1.add(UBean.invokeGetter(dto,s));
+				
+			}
+		}
+		xql = xql.substring(0,xql.length()-2);
+		xql.concat(where);
+		Object[] args = args1.toArray();
+		
+		
+		return Query.update(con,dto.getClass(),xql,args);
+		}
 
 	// Retorna: el SQL correspondiente a la clase dtoClass acotado por xql
 	public static String _delete(Class<?> dtoClass, String xql) {
