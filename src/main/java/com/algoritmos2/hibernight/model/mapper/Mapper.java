@@ -1,8 +1,6 @@
 package com.algoritmos2.hibernight.model.mapper;
 
-import com.algoritmos2.hibernight.model.Direccion;
-import com.algoritmos2.hibernight.model.Ocupacion;
-import com.algoritmos2.hibernight.model.Persona;
+import com.algoritmos2.hibernight.model.*;
 import com.algoritmos2.hibernight.model.QueryBuilder;
 import com.algoritmos2.hibernight.model.annotations.Column;
 import com.algoritmos2.hibernight.model.annotations.Id;
@@ -190,6 +188,9 @@ public class Mapper {
 				where += ' ';
 				break;
 			case '?':
+				if(args.length==0){
+					where+='?';break;
+					}
 				argumentoN++;
 				try {
 					where += analizarArgumento(args[argumentoN].toString());
@@ -531,6 +532,8 @@ public class Mapper {
 			}
 			
 		}
+		
+		
 	}
 	
 	//Si hay " las cambia por '
@@ -539,9 +542,52 @@ public class Mapper {
 			return "'" + sacarComillasYLLaves(stringConComillas) + "'";
 		return stringConComillas;
 	}
-	
+
 	//Saca las "" y las {} de los JSON
 	private static String sacarComillasYLLaves(String stringSucio) {
 		return stringSucio.substring(1, stringSucio.length()-1);
+	}
+	
+	public static void analizarTablasWhere(Class<?> dtoClass, QueryBuilder queryObjet ){
+		List<String> atributos= new ArrayList<>();
+		List<String> tablas= new ArrayList<>();
+		
+		StringTokenizer st = new StringTokenizer(queryObjet.getWhere()," ");
+
+		while (st.hasMoreTokens()){
+			atributos.add(st.nextToken());
+		
+		}
+		StringTokenizer st2= null;
+		int pos=-1;
+		
+		for (final String atributo : atributos) {
+			pos = atributo.indexOf(".");
+			if (pos!=-1){
+				st2= new StringTokenizer(atributo,".");
+				tablas.add(st2.nextToken());
+			}
+		}
+		String atributosAux="";
+		String nombreDeTabla = tableName(dtoClass);
+		String nombreDeTablaJoin="";
+		
+		final Field[] variables = dtoClass.getDeclaredFields();
+		pos=-1;
+		for (final Field variable : variables) {
+				pos=tablas.indexOf(variable.getName());
+			if(pos!=-1){	
+				nombreDeTablaJoin = tableName(variable.getType());
+				String nombreAtributo1 = obtenerFk(dtoClass, variable.getType());
+				String nombreAtributo2 = obtenerID(variable.getType());
+				atributosAux = " INNER JOIN " + nombreDeTablaJoin;
+				atributosAux += " ON " + nombreDeTabla + "." + nombreAtributo1 + "=" + nombreDeTablaJoin + "."
+						+ nombreAtributo2;
+				queryObjet.addJoin(atributosAux);
+			}
+			}
+		
+		
+		return;
 	}
 }
