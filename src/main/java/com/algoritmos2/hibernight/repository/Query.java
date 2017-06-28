@@ -240,10 +240,10 @@ public class Query {
 			stmt = con.createStatement();
 		} catch (SQLException e) {
 			e.printStackTrace();
-			throw new RuntimeException();
+			throw new Error("La connection es incorrecta");
 		}
 		try {
-			stmt.execute(_insert(dto));
+			stmt.executeUpdate(_insert(dto));
 		} catch (SQLException e) {
 			e.printStackTrace();
 			throw new RuntimeException();
