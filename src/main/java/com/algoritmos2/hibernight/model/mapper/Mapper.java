@@ -1,11 +1,10 @@
 package com.algoritmos2.hibernight.model.mapper;
 
-import com.algoritmos2.hibernight.model.*;
+
 import com.algoritmos2.hibernight.model.QueryBuilder;
 import com.algoritmos2.hibernight.model.annotations.Column;
 import com.algoritmos2.hibernight.model.annotations.Id;
 import com.algoritmos2.hibernight.model.annotations.Table;
-import com.algoritmos2.hibernight.repository.Query;
 import com.google.gson.Gson;
 
 import net.sf.cglib.proxy.Enhancer;

@@ -32,4 +32,9 @@ public class _insertTest {
 	public void test_insert(){
 		assertEquals(updateEsperado, Mapper._insert(personaPrueba));
 	}
+	
+	@Test
+	public void test_insert2(){
+		assertEquals(updateEsperado, Mapper._insert(personaPrueba));
+	}
 }
