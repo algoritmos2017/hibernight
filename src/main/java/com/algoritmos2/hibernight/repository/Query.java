@@ -5,6 +5,7 @@ import com.algoritmos2.hibernight.model.annotations.Column;
 import com.algoritmos2.hibernight.model.annotations.Id;
 import com.algoritmos2.hibernight.model.annotations.Table;
 import com.algoritmos2.hibernight.model.mapper.Mapper;
+import com.mysql.jdbc.PreparedStatement;
 
 import javax.sound.midi.SysexMessage;
 import java.lang.reflect.Constructor;
@@ -26,7 +27,7 @@ import java.util.stream.Collectors;
 public class Query {
 
 	// Retorna: el SQL correspondiente a la clase dtoClass acotado por xql
-	public static <T> String _query(Class<T> dtoClass, String xql, Object... args) {
+	public static <T> String _query(Class<T> dtoClass, String xql) {
 		QueryBuilder queryBuilder = new QueryBuilder();
 
 		queryBuilder.setTablaName(Mapper.tableName(dtoClass));
@@ -49,9 +50,9 @@ public class Query {
 			sql += join + " ";
 		}
 		
-		Mapper.obternerWhere(dtoClass, xql, queryBuilder, args);
+		Mapper.obternerWhere(dtoClass, xql, queryBuilder);
 		if (!queryBuilder.getWhere().equals(" ")) {
-			sql += " WHERE " + dtoClass.getAnnotation(Table.class).name() + "." + queryBuilder.getWhere();
+			sql += " WHERE " + queryBuilder.getWhere();
 		}
 		
 		return sql;
@@ -66,7 +67,7 @@ public class Query {
 		// Persona.id_direccion=direccion.id_direccion inner join ocupacion on
 		// Persona.id_ocupacion=ocupacion.id_ocupacion inner join tipo_ocupacion
 		// on ocupacion.id_tipo_ocupacion=tipo_ocupacion.id_tipoocupacion";
-		String realQuery = _query(dtoClass, xql, args);
+		String realQuery = _query(dtoClass, xql);
 		List<Object> result = new ArrayList();
 		Statement stmt = null;
 		System.out.println(realQuery);
@@ -75,7 +76,9 @@ public class Query {
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
-
+		
+		//Supuestamente se le tienen que settear los argumentos al statement con setObject
+		
 		ResultSet rs = stmt.executeQuery(realQuery);
 
 		/*
@@ -91,7 +94,7 @@ public class Query {
 
 		return (List<T>) result;
 	}
-
+	
 	// Retorna: una fila identificada por id o null si no existe
 	// Invoca a: query
 	public static <T> T find(Connection con, Class<T> dtoClass, Object id)
@@ -146,6 +149,7 @@ public class Query {
 
 		return fieldsQuery.toString();
 	}
+	
  
 	// Invoca a: _update para obtener el SQL que se debe ejecutar
 	// Retorna: la cantidad de filas afectadas luego de ejecutar el SQL

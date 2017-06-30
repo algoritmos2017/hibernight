@@ -15,7 +15,7 @@ public class _insertTest {
 	private Persona personaPrueba = new Persona();
 	private Direccion dir = new Direccion();
 	private Ocupacion ocu = new Ocupacion();
-	private String updateEsperado = "INSERT INTO persona (id_direccion,id_ocupacion,nombre,id_persona) VALUES (2,30,'Pancurulo',1);";
+	private String insertEsperado = "INSERT INTO persona (id_direccion,id_ocupacion,nombre,id_persona) VALUES (2,30,'Pancurulo',1);";
 	
 	@Before
 	public void setUp(){
@@ -30,6 +30,6 @@ public class _insertTest {
 	
 	@Test
 	public void test_insert(){
-		assertEquals(updateEsperado, Mapper._insert(personaPrueba));
+		assertEquals(insertEsperado, Mapper._insert(personaPrueba));
 	}
 }

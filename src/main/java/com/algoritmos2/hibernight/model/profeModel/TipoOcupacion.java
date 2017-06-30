@@ -41,6 +41,4 @@ public class TipoOcupacion {
         return other.getIdTipoOcupacion().equals(getIdTipoOcupacion())
                 && other.getDescripcion().equals(getDescripcion());
     }
-
-
 }

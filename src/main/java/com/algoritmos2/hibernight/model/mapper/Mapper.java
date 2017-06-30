@@ -1,11 +1,10 @@
 package com.algoritmos2.hibernight.model.mapper;
 
-import com.algoritmos2.hibernight.model.*;
+import com.algoritmos2.hibernight.model.profeModel.*;
 import com.algoritmos2.hibernight.model.QueryBuilder;
 import com.algoritmos2.hibernight.model.annotations.Column;
 import com.algoritmos2.hibernight.model.annotations.Id;
 import com.algoritmos2.hibernight.model.annotations.Table;
-import com.algoritmos2.hibernight.repository.Query;
 import com.google.gson.Gson;
 
 import net.sf.cglib.proxy.Enhancer;
@@ -23,16 +22,15 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class Mapper {
+	//"$ocupacion.tipoOcupacion.descripcion = ?"
+	//_query(Persona.class,xql,"Profesional")
+	//tipo_ocupacion.descripcion
 
 	private static final String PRIMARY_KEY = "primary_key";
 	private static final String TABLE_NAME = "table_name";
 	private static final String COLUMN = "Column";
-	private static final String TABLE = "Table";
 	private static final String ID = "Id";
-	private static final String WHERE = "WHERE";
-	private static final String SELECT = "SELECT";
 	private static Map<Class, String> types;
-	private static Map<String, String> traduccion;
 
 	public Mapper() {
 		this.types = new HashMap() {
@@ -162,113 +160,128 @@ public class Mapper {
 		else
 			return "";
 	}
-
-	public static <T> void obternerWhere(Class<T> clase, String xql, QueryBuilder queryBuilder, Object... args) {
-		List<Class<?>> clasesATraducir = obtenerClasesDeRelaciones(clase);
-		traduccion = traducirListaDeClases(clasesATraducir);
+	
+	//"$ocupacion.tipoOcupacion.descripcion = ?"
+	//$nombre=? and $direccion.calle=?
+	public static <T> void obternerWhere(Class<T> clase, String xql, QueryBuilder queryBuilder) {
 		String where = "", aux = "";
 		char car;
-		int argumentoN = -1, i = 0;
+		int i = 0;
 
-		xql += ' ';// Se le aï¿½ade al final para que lo use como sentinela
+		xql += ' ';
 
-		while (i < xql.length()) {
+		while(i < xql.length()) {
 			car = xql.charAt(i);
 			i++;
-
-			if (Character.isLetterOrDigit(car)) {
+			
+			//Se colectan los caracteres que cumplen el criterio
+			if (Character.isLetterOrDigit(car) || car == '.' || car == '$') {
 				aux += car;
 			}
 
-			switch (car) {
+			switch (car){
 			case ' ':
 				if (!aux.isEmpty()) {
-					where += analizarAux(aux);
+					where += analizarAux(aux, clase);
 					aux = "";
 				}
 				where += ' ';
 				break;
-			case '?':
-				if(args.length==0){
-					where+='?';break;
-					}
-				argumentoN++;
-				try {
-					where += analizarArgumento(args[argumentoN].toString());
-				} catch (ArrayIndexOutOfBoundsException e) {
-					throw new Error("Faltan argumentos en el xql");
-				}
-				break;
-			case '$':
-				break;
-			case '.':
-				try {
-					where += analizarNombreDeTabla(aux, clase);
-				} catch (NoSuchFieldException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (SecurityException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				aux = "";
-				where += '.';
-				break;
+			
 			case '=':
-				where += analizarAux(aux);
+				where += analizarAux(aux, clase);
 				aux = "";
 				where += '=';
 				break;
+			
+			case '?':
+				where += '?';
+				break;
 			}
 		}
-
-		if ((argumentoN + 1) < args.length)
-			throw new Error("Demasiados argumentos en el xql");
-
+		
 		queryBuilder.setWhere(where);
 	}
-
-	private static String analizarAux(String aux) {
+	
+	
+	private static <T> String analizarAux(String aux, Class<T> clase) {
+		
+		//Cheackeo de palabras reservadas
 		switch (aux) {
 		case "or":
 			return "OR";
 		case "and":
 			return "AND";
-		default:// Serï¿½an nï¿½meros, campos o cadenas
-			if (traduccion.containsKey(aux))// Si es un campo retornarlo
-											// traducido
-				return traduccion.get(aux);
-			return analizarArgumento(aux);// No es un campo, pero es una cadena
-											// de letras o una constante
+		case "like":
+			return "LIKE";
+		case "OR":
+			return "OR";
+		case "AND":
+			return "AND";
+		case "LIKE":
+			return "LIKE";
 		}
+		// Serian numeros, campos o cadenas
+		if(aux.contains("$")){//Campos
+			aux=aux.substring(1);
+			return analizarRelaiones(aux, clase);
+		}
+		//Cadenas o numeros
+		return analizarArgumento(aux);
 	}
-
+	
 	public static String analizarArgumento(String argumento) {
-		if (esCadenaAlfnum(argumento))// Si es alfanumï¿½rica le pone las
-										// comillas
-			return "\'" + argumento + "\'";
+		if (!esCadenaNum(argumento))// Si es alfanumï¿½rica le pone las comillas simples
+			return "'" + argumento + "'";
 		return argumento;// Si no, la retorna como una constante
 	}
 
-	private static boolean esCadenaAlfnum(String cadena) {
-		boolean esCadenaDeNumeros = true;
-		for (int i = 0; i < cadena.length(); ++i) {
-			if (!Character.isDigit(cadena.charAt(i))) {
-				esCadenaDeNumeros = false;
-				break;
-			}
-		}
-		if (esCadenaDeNumeros)
-			return false;
-
-		for (int i = 0; i < cadena.length(); ++i) {
-			char caracter = cadena.charAt(i);
-
-			if (!Character.isLetterOrDigit(caracter)) {
-				throw new Error("XQL contiene caracteres incorrectos");
-			}
-		}
+	private static boolean esCadenaNum(String cadena) {
+		for (int i = 0; i < cadena.length(); ++i)
+			if (!Character.isDigit(cadena.charAt(i)))
+				return false;
+		
 		return true;
+	}
+	//$ocupacion.tipoOcupacion.descripcion
+	//tipo_ocupacion.descripcion
+	private static String analizarRelaiones(String aux, Class<?> clase) {
+		Queue<String> nombres = new LinkedList<String>();
+		nombres.addAll(Arrays.asList(aux.split("\\.")));
+		List<String> auxWhere = new ArrayList<String>();
+		
+		auxWhere = analizarRecursivo(nombres, auxWhere, clase);
+		
+		int i = auxWhere.size()-1;
+		
+		return auxWhere.get(i-1) + "." + auxWhere.get(i);
+	}
+	//Persona
+	//$ocupacion.tipoOcupacion.descripcion
+	//tipo_ocupacion.descripcion
+	private static List<String> analizarRecursivo(Queue<String> nombres, List<String> auxWhere, Class<?> claseActual) {
+		if(nombres.isEmpty())
+			return auxWhere;
+		Field campoActual;
+		
+		if(claseActual.isAnnotationPresent(Table.class)){
+			auxWhere.add(tableName(claseActual));
+			
+				try {
+					campoActual = claseActual.getDeclaredField(nombres.poll());
+				} catch (NoSuchFieldException | SecurityException e) {
+					e.printStackTrace();
+					throw new Error("Error en el xql");
+				}
+				claseActual = campoActual.getType();
+				
+				//Guardar si es un campo final
+				if(!claseActual.isAnnotationPresent(Table.class)){
+					auxWhere.add(campoActual.getAnnotation(Column.class).name());
+				}
+		}
+		
+		return analizarRecursivo(nombres, auxWhere, claseActual);
 	}
 
 	private static <T> String analizarNombreDeTabla(String fieldName, Class<T> clase)
@@ -343,7 +356,7 @@ public class Mapper {
 	 * misma clase A Ej: mï¿½tododo(Persona.class) devuelde Persona,
 	 * Direcciï¿½n, Ocupaciï¿½n, etc
 	 */
-	public static <T> List<Class<?>> obtenerClasesDeRelaciones(Class<T> claseAEvaluar) {
+	private static <T> List<Class<?>> obtenerClasesDeRelaciones(Class<T> claseAEvaluar) {
 		List<Class<?>> clasesEvaluadas = new ArrayList<>();
 		List<Class<?>> clasesAEvaluar = new ArrayList<>();
 
@@ -397,7 +410,7 @@ public class Mapper {
 	 * tabla Ej: Mï¿½todo(Persona) devuelve [<idPersona, id_persona>,
 	 * <direccion, id_direccion>, <Persona, person>, etc]
 	 */
-	public static <T> Map<String, String> traducirDeObjetosARelacional(Class<T> clase) {
+	private static <T> Map<String, String> traducirDeObjetosARelacional(Class<T> clase) {
 		Field[] variables = clase.getDeclaredFields();
 		Map<String, String> nombreDelProgramadorYDeLaTabla = new HashMap<>();
 
@@ -405,15 +418,14 @@ public class Mapper {
 			nombreDelProgramadorYDeLaTabla.put(clase.getSimpleName(), tableName(clase));
 
 		for (Field variable : variables) {
-			Optional<Column> posibleAnotacion = Optional.ofNullable(variable.getAnnotation(Column.class));
-
-			if (posibleAnotacion.isPresent())
-				nombreDelProgramadorYDeLaTabla.put(variable.getName(), posibleAnotacion.get().name());
+			if (variable.isAnnotationPresent(Column.class))
+				nombreDelProgramadorYDeLaTabla.put(variable.getName(), variable.getAnnotation(Column.class).name());
 		}
 
 		return nombreDelProgramadorYDeLaTabla;
 	}
-
+	
+	
 	// Lo mismo que arriba pero para una lista de clases
 	private static Map<String, String> traducirListaDeClases(List<Class<?>> clases) {
 		Map<String, String> traduccion = new HashMap<>();
@@ -422,6 +434,12 @@ public class Mapper {
 			traduccion.putAll(traducirDeObjetosARelacional(clase));
 
 		return traduccion;
+	}
+	
+	//Combinacion de los metodos de arriba, es el que se debería usar
+	//ya que retorna absolutamente todo traducido
+	public static <T> Map<String, String> traducirTodo(Class<T> clase) {
+		return traducirListaDeClases(obtenerClasesDeRelaciones(clase));
 	}
 
 	public <T> String createTableQuery(Class<T> clazz) {
@@ -456,7 +474,7 @@ public class Mapper {
 	public static String _insert(Object dto) {
 		String insert = "INSERT INTO ";
 		Map<String, String> atributosYValores = obtenerAtributosYValores(dto);
-		traduccion = traducirDeObjetosARelacional(dto.getClass());
+		Map<String, String> traduccion = traducirListaDeClases(obtenerClasesDeRelaciones(dto.getClass()));
 		List<String> atributos = new ArrayList<String>(atributosYValores.keySet());
 
 		insert = insert + tableName(dto.getClass()) + " (";
