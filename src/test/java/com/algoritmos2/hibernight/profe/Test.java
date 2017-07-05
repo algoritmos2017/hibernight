@@ -21,7 +21,7 @@ import com.algoritmos2.hibernight.repository.Query;
 public class Test extends DataBaseConfig 
 {
 	@org.junit.Test
-	public void testFind()
+	public void testFind() throws IllegalAccessException, InvocationTargetException, InstantiationException, NoSuchMethodException, ClassNotFoundException, SecurityException, SQLException
 	{
 		Connection con = getConnection();
 		
