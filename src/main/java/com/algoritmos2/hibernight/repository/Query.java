@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 public class Query {
 
 	// Retorna: el SQL correspondiente a la clase dtoClass acotado por xql
-	public static <T> String _query(Class<T> dtoClass, String xql) {
+	public static <T> String _query(Class<T> dtoClass, String xql, Object... args) {
 		QueryBuilder queryBuilder = new QueryBuilder();
 
 		queryBuilder.setTablaName(Mapper.tableName(dtoClass));
@@ -35,11 +35,11 @@ public class Query {
 
 		String sql = "";
 		sql += "SELECT ";
-
+		
 		for (final String campo : queryBuilder.getColumns()) {
 			sql += campo + ", ";
 		}
-		// Sacar esta villereada
+		
 		sql = sql.substring(0, sql.length() - 2) + " ";
 		
 		sql += " FROM " + queryBuilder.getTablaName();
@@ -50,7 +50,7 @@ public class Query {
 			sql += join + " ";
 		}
 		
-		Mapper.obternerWhere(dtoClass, xql, queryBuilder);
+		Mapper.obternerWhere(dtoClass, xql, queryBuilder, args);
 		if (!queryBuilder.getWhere().equals(" ")) {
 			sql += " WHERE " + queryBuilder.getWhere();
 		}
@@ -67,7 +67,7 @@ public class Query {
 		// Persona.id_direccion=direccion.id_direccion inner join ocupacion on
 		// Persona.id_ocupacion=ocupacion.id_ocupacion inner join tipo_ocupacion
 		// on ocupacion.id_tipo_ocupacion=tipo_ocupacion.id_tipoocupacion";
-		String realQuery = _query(dtoClass, xql);
+		String realQuery = _query(dtoClass, xql, args);
 		List<Object> result = new ArrayList();
 		Statement stmt = null;
 		System.out.println(realQuery);
@@ -91,7 +91,7 @@ public class Query {
 
 			result.add(Mapper.getObjectFrom(dtoClass, rs, con));
 		}
-
+		
 		return (List<T>) result;
 	}
 	
