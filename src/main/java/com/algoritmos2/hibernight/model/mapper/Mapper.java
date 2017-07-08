@@ -163,13 +163,12 @@ public class Mapper {
 	//"$ocupacion.tipoOcupacion.descripcion = ?"
 	//$nombre=? and $direccion.calle=?
 
-	public static <T> void obternerWhere(Class<T> clase, String xql, QueryBuilder queryBuilder, Object... args) throws NoSuchFieldException, SecurityException {
+	public static <T> void obternerWhere(Class<T> clase, String xql, QueryBuilder queryBuilder) throws NoSuchFieldException, SecurityException {
 
 		String where = "", aux = "";
 		char car;
 		int i = 0;
 		
-		Queue <Object> colaDeArgumentos = new LinkedList<>(Arrays.asList(args));
 
 		xql += ' ';
 
@@ -198,7 +197,7 @@ public class Mapper {
 				break;
 			
 			case '?':
-				where += analizarArgumento(colaDeArgumentos.poll().toString());
+				where += "?";
 				break;
 			}
 		}
