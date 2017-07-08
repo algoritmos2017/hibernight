@@ -27,7 +27,10 @@ import java.util.stream.Collectors;
 public class Query {
 
 	// Retorna: el SQL correspondiente a la clase dtoClass acotado por xql
+
 	public static <T> String _query(Class<T> dtoClass, String xql) throws NoSuchFieldException, SecurityException {
+
+
 		QueryBuilder queryBuilder = new QueryBuilder();
 
 		queryBuilder.setTablaName(Mapper.tableName(dtoClass));
@@ -35,11 +38,11 @@ public class Query {
 
 		String sql = "";
 		sql += "SELECT ";
-
+		
 		for (final String campo : queryBuilder.getColumns()) {
 			sql += campo + ", ";
 		}
-		// Sacar esta villereada
+		
 		sql = sql.substring(0, sql.length() - 2) + " ";
 		
 		sql += " FROM " + queryBuilder.getTablaName();
@@ -67,6 +70,7 @@ public class Query {
 		// Persona.id_direccion=direccion.id_direccion inner join ocupacion on
 		// Persona.id_ocupacion=ocupacion.id_ocupacion inner join tipo_ocupacion
 		// on ocupacion.id_tipo_ocupacion=tipo_ocupacion.id_tipoocupacion";
+
 		String realQuery = _query(dtoClass, xql);
 
 		for(int i = 0;i < args.length; i++){
@@ -76,6 +80,7 @@ public class Query {
 		  	
 		realQuery = String.format(realQuery.replace("?", "%s"),args);
 		 
+
 		List<Object> result = new ArrayList();
 		Statement stmt = null;
 		//System.out.println(realQuery);
@@ -99,7 +104,7 @@ public class Query {
 
 			result.add(Mapper.getObjectFrom(dtoClass, rs, con));
 		}
-
+		
 		return (List<T>) result;
 	}
 	

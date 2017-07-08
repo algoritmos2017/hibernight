@@ -42,10 +42,10 @@ public class _queryTest {
 	@Test
 	public void xqlConMuchosPuntos() {
 		xql = "$ocupacion.tipoOcupacion.descripcion like ?";
-		String sqlDeLaFuncion = Query._query(Persona.class, xql);
-		sqlEsperado = "SELECT persona.id_ocupacion, ocupacion.id_tipoocupacion, tipo_ocupacion.id_tipoocupacion, tipo_ocupacion.descripcion, ocupacion.id_ocupacion, ocupacion.descripcion, persona.id_persona, persona.nombre  FROM persona INNER JOIN ocupacion ON persona.id_ocupacion=ocupacion.id_ocupacion  INNER JOIN tipo_ocupacion ON ocupacion.id_tipoocupacion=tipo_ocupacion.id_tipoocupacion  WHERE tipo_ocupacion.descripcion LIKE ? ";
+		String sqlDeLaFuncion = Query._query(Persona.class, xql, "Pedro");
+		sqlEsperado = "SELECT persona.id_ocupacion, ocupacion.id_tipoocupacion, tipo_ocupacion.id_tipoocupacion, tipo_ocupacion.descripcion, ocupacion.id_ocupacion, ocupacion.descripcion, persona.id_persona, persona.nombre  FROM persona INNER JOIN ocupacion ON persona.id_ocupacion=ocupacion.id_ocupacion  INNER JOIN tipo_ocupacion ON ocupacion.id_tipoocupacion=tipo_ocupacion.id_tipoocupacion  WHERE tipo_ocupacion.descripcion LIKE 'Pedro' ";
 
-		//System.out.println(sqlDeLaFuncion);
+		System.out.println(sqlDeLaFuncion);
 		Assert.assertEquals(sqlDeLaFuncion, sqlEsperado);
 	}
 	
@@ -53,10 +53,10 @@ public class _queryTest {
 	public void where() {
 		QueryBuilder queryBuilder = new QueryBuilder();
 		String xql = "$ocupacion.tipoOcupacion.descripcion like ?";
-		Mapper.obternerWhere(Persona.class, xql, queryBuilder);
+		Mapper.obternerWhere(Persona.class, xql, queryBuilder, 2);
 		
-		//System.out.println(queryBuilder.getWhere());
-		Assert.assertEquals("tipo_ocupacion.descripcion LIKE ? ", queryBuilder.getWhere());
+		System.out.println(queryBuilder.getWhere());
+		Assert.assertEquals("tipo_ocupacion.descripcion LIKE 2 ", queryBuilder.getWhere());
 	}
 
 	@Test(expected = Error.class)
