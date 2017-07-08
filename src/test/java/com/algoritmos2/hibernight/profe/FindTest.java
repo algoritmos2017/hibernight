@@ -15,7 +15,7 @@ import org.junit.Test;
 public class FindTest extends DataBaseConfig {
 
     @Test
-    public void testFind() throws IllegalAccessException, InstantiationException, SQLException, NoSuchMethodException, InvocationTargetException, ClassNotFoundException {
+    public void testFind() throws IllegalAccessException, InstantiationException, SQLException, NoSuchMethodException, InvocationTargetException, ClassNotFoundException, SecurityException, NoSuchFieldException {
         Connection con = getConnection();
 
         // verifico el find
@@ -44,6 +44,7 @@ public class FindTest extends DataBaseConfig {
 
         // las relaciones son LAZY si o si!
         Assert.assertNull(p.direcciones);
+       System.out.println(p.getDirecciones());
 
         List<PersonaDireccion> dirs = p.getDirecciones();
         Assert.assertNotNull(dirs);

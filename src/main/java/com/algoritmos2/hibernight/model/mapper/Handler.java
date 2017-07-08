@@ -35,7 +35,7 @@ public class Handler implements MethodInterceptor
 			
 			String att = field.getAnnotation(Relation.class).att();
 	        String id = "id"+Character.toUpperCase(att.charAt(0))+ att.substring(1);
-			String xql = "$ " + field.getAnnotation(Relation.class).att() + " =?"; 			
+			String xql = "$" + field.getAnnotation(Relation.class).att() + " =?"; 			
 			List<?> list = Query.query(con,field.getAnnotation(Relation.class).type(),xql,UBean.invokeGetter(object,id));
 			UBean.invokeSetter(object,atributo,list);
 		}

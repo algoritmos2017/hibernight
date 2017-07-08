@@ -49,7 +49,6 @@ public class Mapper {
 		while (matcher.find()) {
 			fields.add(matcher.group(1));
 		}
-
 		return fields;
 	}
 
@@ -60,7 +59,7 @@ public class Mapper {
 		fields.stream().forEach(field -> {
 			try {
 				Field f = clazz.getDeclaredField(field);
-				fieldTableNames.add(f.getName());
+                fieldTableNames.add(f.getAnnotation(Column.class).name());
 			} catch (NoSuchFieldException e) {
 				throw new RuntimeException("No hay una columna con ese nombre");
 			}
@@ -163,7 +162,7 @@ public class Mapper {
 	
 	//"$ocupacion.tipoOcupacion.descripcion = ?"
 	//$nombre=? and $direccion.calle=?
-	public static <T> void obternerWhere(Class<T> clase, String xql, QueryBuilder queryBuilder) {
+	public static <T> void obternerWhere(Class<T> clase, String xql, QueryBuilder queryBuilder) throws NoSuchFieldException, SecurityException {
 		String where = "", aux = "";
 		char car;
 		int i = 0;
@@ -204,7 +203,7 @@ public class Mapper {
 	}
 	
 	
-	private static <T> String analizarAux(String aux, Class<T> clase) {
+	private static <T> String analizarAux(String aux, Class<T> clase) throws NoSuchFieldException, SecurityException {
 		
 		//Cheackeo de palabras reservadas
 		switch (aux) {
@@ -245,25 +244,51 @@ public class Mapper {
 	}
 	//$ocupacion.tipoOcupacion.descripcion
 	//tipo_ocupacion.descripcion
-	private static String analizarRelaiones(String aux, Class<?> clase) {
+	private static String analizarRelaiones(String aux, Class<?> clase) throws NoSuchFieldException, SecurityException {
 		Queue<String> nombres = new LinkedList<String>();
 		nombres.addAll(Arrays.asList(aux.split("\\.")));
 		List<String> auxWhere = new ArrayList<String>();
 		
+		//System.out.println("aux (analizarRelaiones) :" + aux);
+	//	System.out.println("nombre (analizarRelaiones) :" + nombres);
+
 		auxWhere = analizarRecursivo(nombres, auxWhere, clase);
-		
-		int i = auxWhere.size()-1;
-		
-		return auxWhere.get(i-1) + "." + auxWhere.get(i);
+		//System.out.println("AuxWhere (analizarRelaiones) :" + auxWhere);
+		//int i = auxWhere.size()-1;
+		return auxWhere.get(0)+"."+ auxWhere.get(1);
+		//return auxWhere.get(i-1) + "." + auxWhere.get(i);
 	}
 	//Persona
 	//$ocupacion.tipoOcupacion.descripcion
 	//tipo_ocupacion.descripcion
-	private static List<String> analizarRecursivo(Queue<String> nombres, List<String> auxWhere, Class<?> claseActual) {
-		if(nombres.isEmpty())
-			return auxWhere;
-		Field campoActual;
+	private static List<String> analizarRecursivo(Queue<String> nombres, List<String> auxWhere, Class<?> claseActual) throws SecurityException, NoSuchFieldException {
+	
+		String tabla = claseActual.getAnnotation(Table.class).name();
+		String atributo;
+		String columna = "";
+		while(!nombres.isEmpty()){
+			if(null != claseActual.getAnnotation(Table.class)){
+				tabla = claseActual.getAnnotation(Table.class).name();
+				atributo = nombres.poll();
+				Field field = claseActual.getDeclaredField(atributo);
+				if(field.isAnnotationPresent(Column.class)){
+				columna = field.getAnnotation(Column.class).name();
+				}
+				claseActual = field.getType();
+			}
+		}
+		//System.out.println("analizar recursivo,,,,,,,,");
+		auxWhere.add(0,tabla);
+		auxWhere.add(1,columna);
 		
+		return auxWhere;
+		
+		/*
+		
+		if(nombres.isEmpty())return auxWhere;
+		Field campoActual;
+		//Class claseActual1= null;
+				
 		if(claseActual.isAnnotationPresent(Table.class)){
 			auxWhere.add(tableName(claseActual));
 			
@@ -273,7 +298,7 @@ public class Mapper {
 					e.printStackTrace();
 					throw new Error("Error en el xql");
 				}
-				claseActual = campoActual.getType();
+				claseActual = campoActual.getClass();
 				
 				//Guardar si es un campo final
 				if(!claseActual.isAnnotationPresent(Table.class)){
@@ -282,6 +307,8 @@ public class Mapper {
 		}
 		
 		return analizarRecursivo(nombres, auxWhere, claseActual);
+		
+		*/
 	}
 
 	private static <T> String analizarNombreDeTabla(String fieldName, Class<T> clase)
@@ -289,7 +316,7 @@ public class Mapper {
 
 		Field atributoBuscado = clase.getDeclaredField(fieldName);
 
-		return tableName(atributoBuscado.getType());
+		return tableName(atributoBuscado.getClass());
 	}
 
 	public static <T> Object getObjectFrom(Class<T> dtoClass, ResultSet rs, Connection con)

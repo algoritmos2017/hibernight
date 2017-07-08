@@ -1,11 +1,14 @@
 package com.algoritmos2.hibernight;
 
 import com.algoritmos2.hibernight.config.DataBaseConfig;
-import com.algoritmos2.hibernight.model.Direccion;
-import com.algoritmos2.hibernight.model.Persona;
 import com.algoritmos2.hibernight.model.mapper.Mapper;
+import com.algoritmos2.hibernight.model.profeModel.Persona;
 import com.algoritmos2.hibernight.repository.Query;
+
+import list;
+
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -36,7 +39,7 @@ public class QueryTest extends DataBaseConfig {
         closeConnection();
     }
 
-    @Test
+ /*   @Test
     public void list() throws ConfigurationException, SQLException {
         Mapper mapper = new Mapper();
 
@@ -75,11 +78,26 @@ public class QueryTest extends DataBaseConfig {
         System.out.println(fields);
         //Query.query(connection, Person.class, xql, Arrays.asList("jorg","dreccion", "trabajo"));
     }
-
+*/
     @Test
     public void query() throws SQLException, InvocationTargetException, NoSuchMethodException, ClassNotFoundException, InstantiationException, IllegalAccessException {
-        String xql = "$nombre=? and $direccion.numero=?";
-        //List<Persona> personas = Query.query(connection,Persona.class, xql, "Diego", 111);
+       
+    	String xql = "$nombre = ?";
+    	//System.out.println(xql.replaceFirst("?","");
+    	//String xql = "";
+      /*  List<Persona> personas = Query.query(connection,Persona.class, xql,"Analia");
+        for(Persona p : personas){
+        	System.out.println(p.getNombre());
+        	System.out.println(p.getIdPersona());
+        }
+        
+       Persona p = Query.find(connection,Persona.class,12);
+        Assert.assertEquals(p.getNombre(),"Pablo");
+        Assert.assertEquals((Integer)p.getOcupacion().getIdOcupacion(),(Integer)4);
+*/
+        List<Persona> p = Query.query(connection,Persona.class,"$idPersona = ?",12);
+        System.out.println(p.get(0).getDirecciones());
+
 
     }
 }
